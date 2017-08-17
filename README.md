@@ -12,7 +12,7 @@ pip3 install git+git://github.com/virgesmith/UKCensusAPI.git
 ```
 ### [humanleague](https://github.com/virgesmith/humanleague)
 ```
-pip3 install git+git://github.com/virgesmith/humanleague.git@1.0.0
+pip3 install git+git://github.com/virgesmith/humanleague.git@1.0.1
 ```
 
 ## Testing

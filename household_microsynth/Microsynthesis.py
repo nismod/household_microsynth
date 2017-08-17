@@ -27,8 +27,8 @@ class Microsynthesis:
 
     # assignment does shallow copy, need to use .copy() to avoid this getting query_params fields
     common_params = {"MEASURES": "20100",
-                    "date": "latest",
-                    "geography": area_codes}
+                     "date": "latest",
+                     "geography": area_codes}
 
     # LC4402EW - Accommodation type by type of central heating in household by tenure
     table = "NM_887_1"
@@ -89,13 +89,13 @@ class Microsynthesis:
     return (LC4402, LC4404, LC4405, LC4408, LC1105, KS401, COMMUNAL)
 
   def __get_communal_data(self, query_params):
-    
+
     query_params["RURAL_URBAN"] = 0
     query_params["CELL"] = "2,6,11,14,22...34"
     query_params["select"] = "GEOGRAPHY_CODE,CELL,OBS_VALUE"
     QS420EW = self.api.get_data("NM_552_1", query_params) # establishments
     QS421EW = self.api.get_data("NM_553_1", query_params) # people
-    
+
     # merge the two tables (so we have establishment and people counts)
     QS420EW["Occupants"] = QS421EW.OBS_VALUE
 
@@ -103,3 +103,5 @@ class Microsynthesis:
 #    print(QS421EW.head(20))
 
     return QS420EW
+    
+
