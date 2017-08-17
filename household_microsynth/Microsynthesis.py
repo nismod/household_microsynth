@@ -73,7 +73,7 @@ class Microsynthesis:
     query_params["C_AGE"] = "0"
     query_params["C_RESIDENCE_TYPE"] = "1,2"
     query_params["select"] = "GEOGRAPHY_CODE,C_RESIDENCE_TYPE,OBS_VALUE"
-    LC1105EW = self.api.get_data(table, query_params)
+    LC1105 = self.api.get_data(table, query_params)
 
     # KS401EW - Dwellings, household spaces and accommodation type
     table = "NM_618_1"
@@ -81,11 +81,25 @@ class Microsynthesis:
     query_params["RURAL_URBAN"] = "0"
     query_params["CELL"] = "5,6"
     query_params["select"] = "GEOGRAPHY_CODE,CELL,OBS_VALUE"
-    KS401EW = self.api.get_data(table, query_params)
+    KS401 = self.api.get_data(table, query_params)
 
-    #(QS420EW, QS421EW) = self.__get_communal_data(region_codes, resolution)
+    # NOTE: common_params is passed by ref so take a copy
+    COMMUNAL = self.__get_communal_data(common_params.copy())
 
-    return (LC4402, LC4404, LC4405, LC4408, LC1105EW, KS401EW)
+    return (LC4402, LC4404, LC4405, LC4408, LC1105, KS401, COMMUNAL)
 
-  def __get_communal_data(self, region_codes, resolution):
-    print("TODO")
+  def __get_communal_data(self, query_params):
+    
+    query_params["RURAL_URBAN"] = 0
+    query_params["CELL"] = "2,6,11,14,22...34"
+    query_params["select"] = "GEOGRAPHY_CODE,CELL,OBS_VALUE"
+    QS420EW = self.api.get_data("NM_552_1", query_params) # establishments
+    QS421EW = self.api.get_data("NM_553_1", query_params) # people
+    
+    # merge the two tables (so we have establishment and people counts)
+    QS420EW["Occupants"] = QS421EW.OBS_VALUE
+
+#    print(QS420EW.head(20))
+#    print(QS421EW.head(20))
+
+    return QS420EW

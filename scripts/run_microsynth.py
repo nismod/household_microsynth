@@ -28,31 +28,32 @@ resolution = Api.Nomisweb.LSOA
 # specify cache directory
 microsynthesiser = Microsynthesiser.Microsynthesis("./")
 
-(LC4402, LC4404, LC4405, LC4408, LC1105EW, KS401EW) = microsynthesiser.get_census_data(region, resolution)
+(LC4402, LC4404, LC4405, LC4408, LC1105, KS401, COMMUNAL) = microsynthesiser.get_census_data(region, resolution)
 
 # Do some basic checks on totals
 total_occ_dwellings = sum(LC4402.OBS_VALUE)
 
-#stopifnot(sum(tenurePeopleRooms$OBS_VALUE) == totalOccDwellings)
-#stopifnot(sum(tenurePeopleBeds$OBS_VALUE) == totalOccDwellings)
-#stopifnot(sum(tenurePpbComp$OBS_VALUE) == totalOccDwellings)
-#stopifnot(sum(unoccupied[unoccupied$CELL==5,]$OBS_VALUE) == totalOccDwellings)
+#print(KS401.head(4))
+assert sum(LC4404.OBS_VALUE) == total_occ_dwellings
+assert sum(LC4405.OBS_VALUE) == total_occ_dwellings
+assert sum(LC4408.OBS_VALUE) == total_occ_dwellings
+assert sum(KS401[KS401.CELL==5].OBS_VALUE) == total_occ_dwellings
 
-total_population = sum(LC1105EW.OBS_VALUE)
-total_dwellings = sum(KS401EW.OBS_VALUE)
-#total_communal = sum(communalDetail$Count)
+total_population = sum(LC1105.OBS_VALUE)
+total_dwellings = sum(KS401.OBS_VALUE)
+total_communal = sum(COMMUNAL.OBS_VALUE)
 
-#occPopLBound = sum(tenurePeopleRooms$C_SIZHUK11*tenurePeopleRooms$OBS_VALUE)
-#householdPopulation = sum(communal[communal$C_RESIDENCE_TYPE == 1,]$OBS_VALUE)
-#communalPopulation = sum(communal[communal$C_RESIDENCE_TYPE == 2,]$OBS_VALUE)
+occ_pop_lbound = sum(LC4404.C_SIZHUK11 * LC4404.OBS_VALUE)
+household_population = sum(LC1105[LC1105.C_RESIDENCE_TYPE == 1].OBS_VALUE)
+communal_population = sum(LC1105[LC1105.C_RESIDENCE_TYPE == 2].OBS_VALUE)
 
 print("Dwellings: ", str(total_dwellings))
 print("Occupied households: " + str(total_occ_dwellings))
 print("Unoccupied dwellings: " + str(total_dwellings- total_occ_dwellings))
-#print("Communal residences: " + str(total_communal))
+print("Communal residences: " + str(total_communal))
 
-#print("Total population: ", totalPopulation)
-#print("Population in occupied households: ", householdPopulation)
-#print("Population in communal residences: ", communalPopulation)
-#print("Population lower bound from occupied households: ", occPopLBound)
-#print("Occupied household population underestimate: ", householdPopulation - occPopLBound)
+print("Total population: ", total_population)
+print("Population in occupied households: ", household_population)
+print("Population in communal residences: ", communal_population)
+print("Population lower bound from occupied households: ", occ_pop_lbound)
+print("Occupied household population underestimate: ", household_population - occ_pop_lbound)
