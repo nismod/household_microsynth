@@ -2,6 +2,7 @@
 
 # run script for Household microsynthesis
 
+import time
 import numpy as np
 import pandas as pd
 import humanleague
@@ -26,13 +27,17 @@ RESOLUTION = Api.Nomisweb.OA
 
 def main():
 
+  # start timing
+  start_time = time.time()
+
   # specify cache directory
-  microsynthesiser = Microsynthesiser.Microsynthesis("./")
+  microsynthesiser = Microsynthesiser.Microsynthesis("/tmp/UKCensusAPI")
 
   (LC4402, LC4404, LC4405, LC4408, LC1105, KS401, COMMUNAL) = microsynthesiser.get_census_data(REGION, RESOLUTION)
 
   # Do some basic checks on totals
   total_occ_dwellings = sum(LC4402.OBS_VALUE)
+  print(total_occ_dwellings)
   assert sum(LC4404.OBS_VALUE) == total_occ_dwellings
   assert sum(LC4405.OBS_VALUE) == total_occ_dwellings
   assert sum(LC4408.OBS_VALUE) == total_occ_dwellings
@@ -99,6 +104,7 @@ def main():
       np.random.shuffle(thdata)
 
       subindex = index
+      # TODO vectorise
       for i in range(0, len(thdata)):
         population.at[subindex, "BuildType"] = thdata[0][0] 
         population.at[subindex, "CentralHeating"] = thdata[0][1] - 1 
@@ -129,36 +135,68 @@ def main():
       # 3. "usim" of composition vs personsPerBedroom
       
       # single are unambiguous
-#      nSingle = nrow(synHomes[synHomes$OA == oa
-#                       & synHomes$Tenure == tenure
-#                       & synHomes$Occupants == 1,])
-#      synHomes[synHomes$OA == oa
-#               & synHomes$Tenure == tenure
-#               & synHomes$Occupants == 1,]$Composition = 1
-#      
-#      # randomly assign the rest (see below)
-#      compdata = tenurePpbComp[tenurePpbComp$GEOGRAPHY_CODE == oa
-#                             & tenurePpbComp$C_TENHUK11 == tenure
-#                             & tenurePpbComp$C_AHTHUK11 != 1 
-#                             & tenurePpbComp$OBS_VALUE > 0,]
-#      compdata = data.frame(ppb=rep(compdata$C_PPBROOMHEW11,compdata$OBS_VALUE),
-#                              comp=rep(compdata$C_AHTHUK11, compdata$OBS_VALUE))
-#      
-#      compdata = compdata[sample(nrow(compdata)),]
-#      
-#      if(nrow(compdata) != nrow(synHomes[synHomes$OA == oa & synHomes$Tenure == tenure & synHomes$Composition == -1,])) {
-#             print(paste("Composition mismatch:", oa, tenure, nrow(compdata), nrow(synHomes[synHomes$OA == oa
-#                                                                  & synHomes$Tenure == tenure
-#                                                                  & synHomes$Composition == -1,])))
-#      } else {
-#        synHomes[synHomes$OA == oa & synHomes$Tenure == tenure & synHomes$Composition == -1,]$Composition = compdata$comp
-#      }
+      population.ix[(population.Area == area)
+             & (population.Tenure == tenure)
+             & (population.Occupants == 1), "Composition"] = 1
 
-    # TODO communal
+      # randomly assign the rest (see below)
+      compdata = LC4408.loc[(LC4408.GEOGRAPHY_CODE == area)
+                          & (LC4408.C_TENHUK11 == tenure)
+                          & (LC4408.C_AHTHUK11 != 1)
+                          & (LC4408.OBS_VALUE > 0)]
+
+      compdata = np.vstack((np.repeat(compdata.C_PPBROOMHEW11.as_matrix(), compdata.OBS_VALUE.as_matrix()),
+                 np.repeat(compdata.C_AHTHUK11.as_matrix(), compdata.OBS_VALUE.as_matrix()))).T
+
+      n_not_single = len(compdata)
+
+      # randomise to eliminate bias w.r.t. occupants/rooms/bedrooms
+      np.random.shuffle(compdata)
+
+      if n_not_single != len(population[(population.Area == area) 
+                                    & (population.Tenure == tenure) 
+                                    & (population.Composition != 1)]):
+        print("Composition mismatch:", area, tenure, n_not_single, "vs", len(population[(population.Area == area) 
+                                                                         & (population.Tenure == tenure) 
+                                                                         & (population.Composition != 1)]))
+      else:
+        population.ix[(population.Area == area)
+                    & (population.Tenure == tenure)
+                    & (population.Composition != 1), "Composition"] = compdata[:,0]
+#        population.ix[(population.Area == area)
+#                    & (population.Tenure == tenure)
+#                    & (population.Composition != 1), "PPerBed"] = compdata[:,1]
+
+    # communal
+#    oaCommunal = COMMUNAL.loc[(COMMUNAL.GEOGRAPHY_CODE == area) & (COMMUNAL.OBS_VALUE > 0) ]
+#    
+#    print(area, len(oaCommunal))
+#    for i in range(0, len(oaCommunal)):
+#      # average occupants per establishment - integerised (special case when zero occupants)
+##      occs = rep(0L, oaCommunal[i,]$Occupants)
+## OBS_VALUE = no. of establishments
+##      if ( oaCommunal[i,]$Occupants > 0) {
+##        occs = humanleague::prob2IntFreq(rep(1/oaCommunal[i,]$Count, oaCommunal[i,]$Count), oaCommunal[i,]$Occupants)$freq
+##      }
+
+#      print(i, oaCommunal)
+#      for j in range(0, oaCommunal.at[i,"OBS_VALUE"]):
+#        population.at[index, "Area"] = area
+#        population.at[index, "BuildType"] = 6
+#        population.at[index, "Tenure"] = 100 + oaCommunal[i,"TypeCode"]
+#        population.at[index, "Occupants"] = 99
+#        population.at[index, "Rooms"] = 99
+#        population.at[index, "Bedrooms"] = 99
+#        population.at[index, "Composition"] = 5
+#        population.at[index, "PPerBed"] = 2
+#        population.at[index, "CentralHeating"] = 1
+#        index += 1
     
     # TODO unoccupied
 
   population.to_csv("./synHouseholds.csv")
+
+  print("Done. Exec time(s): ", time.time() - start_time)
 
 # TODO make private static nonmember...
 def people_per_bedroom(people, bedrooms):
