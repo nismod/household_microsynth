@@ -5,7 +5,7 @@
 import time
 import numpy as np
 import pandas as pd
-import humanleague
+import humanleague # TODO not picking up tip of 1.0
 import ukcensusapi.Nomisweb as Api
 import household_microsynth.Microsynthesis as Microsynthesiser
 
@@ -76,17 +76,17 @@ def main():
 #  print(all_occupants)
 #  print(all_p_per_beds)
   
-  categories = ["Area","BuildType","Tenure", "Composition", "Occupants", "Rooms", "Bedrooms", "PPerBed", "CentralHeating"]
+  categories = ["Area", "BuildType", "Tenure", "Composition", "Occupants", "Rooms", "Bedrooms", "PPerBed", "CentralHeating"]
 
   population = pd.DataFrame(index=range(0, total_dwellings + total_communal), columns=categories)
   
   # permitted states for rooms/bedrooms
   permitted = np.ones((6, 4))
-  permitted[0,1] = 0
-  permitted[0,2] = 0
-  permitted[0,3] = 0
-  permitted[1,2] = 0
-  permitted[1,3] = 0
+  permitted[0, 1] = 0
+  permitted[0, 2] = 0
+  permitted[0, 3] = 0
+  permitted[1, 2] = 0
+  permitted[1, 3] = 0
   permitted[2, 3] = 0
 
   #print(permitted)
@@ -107,7 +107,7 @@ def main():
       # TODO vectorise
       for i in range(0, len(thdata)):
         population.at[subindex, "BuildType"] = thdata[0][0] 
-        population.at[subindex, "CentralHeating"] = thdata[0][1] - 1 
+        population.at[subindex, "CentralHeating"] = thdata[0][1] - 1
         subindex += 1
 
       # 2. constrained usim of rooms and bedrooms
@@ -128,8 +128,8 @@ def main():
           population.at[index, "Tenure"] = tenure # TODO move to step 1?
           population.at[index, "Occupants"] = occ # TODO move to step 1?
           population.at[index, "Rooms"] = pop[0][i] + 1 # since "0" means 1 room
-          population.at[index, "Bedrooms"] = pop[1][i] + 1 
-          population.at[index, "PPerBed"] = people_per_bedroom(occ, pop[1][i] + 1) 
+          population.at[index, "Bedrooms"] = pop[1][i] + 1
+          population.at[index, "PPerBed"] = people_per_bedroom(occ, pop[1][i] + 1)
           index += 1
 
       # 3. "usim" of composition vs personsPerBedroom
@@ -168,31 +168,72 @@ def main():
 #                    & (population.Composition != 1), "PPerBed"] = compdata[:,1]
 
     # communal
-#    oaCommunal = COMMUNAL.loc[(COMMUNAL.GEOGRAPHY_CODE == area) & (COMMUNAL.OBS_VALUE > 0) ]
-#    
-#    print(area, len(oaCommunal))
-#    for i in range(0, len(oaCommunal)):
-#      # average occupants per establishment - integerised (special case when zero occupants)
-##      occs = rep(0L, oaCommunal[i,]$Occupants)
-## OBS_VALUE = no. of establishments
-##      if ( oaCommunal[i,]$Occupants > 0) {
-##        occs = humanleague::prob2IntFreq(rep(1/oaCommunal[i,]$Count, oaCommunal[i,]$Count), oaCommunal[i,]$Occupants)$freq
-##      }
+    oaCommunal = COMMUNAL.loc[(COMMUNAL.GEOGRAPHY_CODE == area) & (COMMUNAL.OBS_VALUE > 0)]
 
-#      print(i, oaCommunal)
-#      for j in range(0, oaCommunal.at[i,"OBS_VALUE"]):
-#        population.at[index, "Area"] = area
-#        population.at[index, "BuildType"] = 6
-#        population.at[index, "Tenure"] = 100 + oaCommunal[i,"TypeCode"]
-#        population.at[index, "Occupants"] = 99
-#        population.at[index, "Rooms"] = 99
-#        population.at[index, "Bedrooms"] = 99
-#        population.at[index, "Composition"] = 5
-#        population.at[index, "PPerBed"] = 2
-#        population.at[index, "CentralHeating"] = 1
-#        index += 1
+    #print(area, len(oaCommunal))
+    for i in range(0, len(oaCommunal)):
+      # TODO...
+      # average occupants per establishment - integerised (special case when zero occupants)
+#      occs = rep(0L, oaCommunal[i,]$Occupants)
+# OBS_VALUE = no. of establishments
+#      if ( oaCommunal[i,]$Occupants > 0) {
+      # pending correct version
+      #occs = humanleague.prob2IntFreq(np.array([0.4,0.3,0.2,0.1]),0)["freq"]
+
+      # row indices are the original values from the entire table
+      for j in oaCommunal.index:
+        population.at[index, "Area"] = area
+        population.at[index, "BuildType"] = 6
+        # TODO check j is correct index? (R code uses i)
+        population.at[index, "Tenure"] = 100 + oaCommunal.at[j, "CELL"]
+        population.at[index, "Occupants"] = 99
+        population.at[index, "Rooms"] = 99
+        population.at[index, "Bedrooms"] = 99
+        population.at[index, "Composition"] = 5
+        population.at[index, "PPerBed"] = 2
+        population.at[index, "CentralHeating"] = 1
+        index += 1
     
-    # TODO unoccupied
+    # unoccupied, should be one entry per area
+    # microsynthesise the occupied houses by BuildType, Tenure, CentralHeating and sample the unoccupied from this population
+    unocc = KS401.loc[(KS401.GEOGRAPHY_CODE == area) & (KS401.CELL == 6)]
+    assert len(unocc == 1)
+    n_unocc = unocc.at[unocc.index[0], "OBS_VALUE"]
+
+#    occ = KS401.loc[(KS401.GEOGRAPHY_CODE == area) & (KS401.CELL == 5)]
+#    assert len(occ == 1)
+#    n_occ = occ.at[occ.index[0], "OBS_VALUE"]
+
+#    print(n_unocc, n_occ)
+    if n_unocc:
+      # type marginal
+      ty = LC4402.loc[LC4402.GEOGRAPHY_CODE == area]
+      tymarginal = ty.groupby("C_TYPACCOM").agg({"OBS_VALUE":np.sum})["OBS_VALUE"].as_matrix()
+      # tenure marginal
+      tnmarginal = ty.groupby("C_TENHUK11").agg({"OBS_VALUE":np.sum})["OBS_VALUE"].as_matrix()
+      # central heating marginal
+      chmarginal = ty.groupby("C_CENHEATHUK11").agg({"OBS_VALUE":np.sum})["OBS_VALUE"].as_matrix()
+
+      #print(type(tymarginal))
+      # pending correct version
+      #uusim = humanleague.synthPop([tymarginal, tnmarginal, chmarginal])
+      #print(uusim)
+#      assert(uusim["conv"])
+#      
+#      idx = which(uusim$x.hat>0,arr.ind=T)
+#      # R is a BAD JOKE! the type of variable index depends on the number of samples (so fails when nUnocc=1) 
+#      idx = idx[sample(nrow(idx),nUnocc+1,replace = T),]
+#      
+#      for (i in 1:nUnocc) {
+#        set(synHomes,mainIndex,"OA", oa)
+#        set(synHomes,mainIndex,"Type", typeLookup[idx[i,1]])
+#        set(synHomes,mainIndex,"Tenure", tenureLookup[idx[i,2]])
+#        set(synHomes,mainIndex,"Occupants", 0)
+#        # Rooms/beds are done at the end (so we can sample population)
+#        set(synHomes,mainIndex,"Composition", 6)
+#        set(synHomes,mainIndex,"PPerBed", 1) # <= 0.5
+#        set(synHomes,mainIndex,"CentralHeating", chLookup[idx[i,3]])
+#        mainIndex = mainIndex + 1L
 
   population.to_csv("./synHouseholds.csv")
 
