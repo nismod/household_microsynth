@@ -13,6 +13,7 @@ assert humanleague.version() == 1
 
 # Set country or local authority/ies here
 REGION = "City of London"
+#REGION = "Newcastle upon Tyne"
 # Set resolution LA/MSOA/LSOA/OA
 RESOLUTION = Api.Nomisweb.OA
 
@@ -42,7 +43,6 @@ def main():
   type_index = np.append(type_index, 6) # this value denotes communal
   tenure_index = LC4402.C_TENHUK11.unique()
   ch_index = LC4402.C_CENHEATHUK11.unique()
-  print(ch_index)
   ppb_index = LC4408.C_PPBROOMHEW11.unique()
   comp_index = LC4408.C_AHTHUK11.unique()
   comp_index = np.append(comp_index, 6) # this value denotes unoccupied
@@ -81,7 +81,6 @@ def main():
   all_areas = LC4402.GEOGRAPHY_CODE.unique()
   all_tenures = LC4402.C_TENHUK11.unique() # assumes same as LC4404/5.C_TENHUK11
   all_occupants = LC4404.C_SIZHUK11.unique() # assumes same as LC4405.C_SIZHUK11
-  all_p_per_beds = LC4408.C_PPBROOMHEW11.unique() 
 
   categories = ["Area", "BuildType", "Tenure", "Composition", "Occupants", "Rooms", "Bedrooms", "PPerBed", "CentralHeating"]
 
@@ -98,7 +97,7 @@ def main():
 
   index = 0
   for area in all_areas:
-    for tenure in all_tenures:
+    for tenure in tenure_index:
       # 1. unconstrained usim of type and central heating 
       thdata_raw = LC4402.loc[(LC4402.GEOGRAPHY_CODE == area) 
                     & (LC4402.C_TENHUK11 == tenure)
@@ -200,6 +199,7 @@ def main():
         # TODO check j is correct index? (R code uses i)
         dwellings.at[index, "Tenure"] = 100 + area_communal.at[area_communal.index[i], "CELL"]
         dwellings.at[index, "Occupants"] = occ_array[j]
+        # TODO if zero occupants, how to set rooms/beds? mean value of establishment type in region? 
         dwellings.at[index, "Rooms"] = occ_array[j]
         dwellings.at[index, "Bedrooms"] = occ_array[j]
         dwellings.at[index, "Composition"] = 5
@@ -222,26 +222,48 @@ def main():
       # central heating marginal
       centheat_marginal = type_tenure_ch.groupby("C_CENHEATHUK11").agg({"OBS_VALUE":np.sum})["OBS_VALUE"].as_matrix()
 
-      # TODO return np.array...so can shuffle directly
+      # TODO return np.array...
       uusim = humanleague.synthPop([type_marginal, tenure_marginal, centheat_marginal])
       assert(uusim["conv"])
-      # randomise and take the first n_unocc values
-      occ_pop = np.array(uusim["result"])
-      np.random.shuffle(occ_pop) 
+      # randomly sample n_unocc values
+      occ_pop = pd.DataFrame(np.array(uusim["result"]).T, columns=["BuildType","Tenure","CentralHeating"])
+      # use without-replacement sampling if possible
+      unocc_pop = occ_pop.sample(n = n_unocc, replace = len(occ_pop) < n_unocc)
+      # we now potentially have duplicate index values which can cause problems indexing
+#      print(unocc_pop.head(10))
+      unocc_pop = unocc_pop.reset_index(drop=True)
+#      print(unocc_pop.head(10))
 
       for j in range(0, n_unocc):
         dwellings.at[index, "Area"] = area
-        # TODO check j is correct index
-        dwellings.at[index, "BuildType"] = type_index[uusim["result"][0][j]]
-        dwellings.at[index, "Tenure"] = tenure_index[uusim["result"][1][j]]
+        dwellings.at[index, "BuildType"] = type_index[unocc_pop.at[j, "BuildType"]]
+        dwellings.at[index, "Tenure"] = tenure_index[unocc_pop.at[j, "Tenure"]]
         dwellings.at[index, "Occupants"] = 0
-        # Rooms/beds are done at the end (so we can sample dwellings)
-        dwellings.at[index, "Rooms"] = 9
-        dwellings.at[index, "Bedrooms"] = 9
+#        # Rooms/beds are done at the end (so we can sample dwellings)
+        dwellings.at[index, "Rooms"] = 0
+        dwellings.at[index, "Bedrooms"] = 0
         dwellings.at[index, "Composition"] = 6
         dwellings.at[index, "PPerBed"] = 1
-        dwellings.at[index, "CentralHeating"] = ch_index[uusim["result"][2][j]]
+        dwellings.at[index, "CentralHeating"] = ch_index[unocc_pop.at[j, "CentralHeating"]]
         index += 1
+
+
+  # rooms and beds for unoccupied (sampled from occupied population in same area and same BuildType)
+  # TODO this is highly suboptimal, subsetting the same thing over and over again
+  unocc = dwellings.loc[dwellings.Composition == 6]
+  for i in unocc.index: 
+    # sample from all occupied dwellings of same build type in same area
+    sample = dwellings.loc[(dwellings.Area == unocc.at[i, "Area"]) 
+                         & (dwellings.BuildType == unocc.at[i,"BuildType"]) 
+                         & (dwellings.Composition != 6)].sample()
+    assert len(sample)
+
+    r = sample.at[sample.index[0], "Rooms"]
+    b = sample.at[sample.index[0], "Bedrooms"]
+
+    dwellings.at[i, "Rooms"] = r
+    dwellings.at[i, "Bedrooms"] = b 
+    dwellings.at[i, "PPerBed"] = people_per_bedroom(r, b)
 
   dwellings.to_csv("./synHouseholds.csv")
 
@@ -296,7 +318,26 @@ def main():
     else:
       print(len(dwellings[(dwellings.Composition == i) & (dwellings.BuildType != 6)]),  sum(KS401[KS401.CELL == 6].OBS_VALUE))
 
+  # Rooms (ignoring communal and unoccupied)
+  assert np.array_equal(sorted(dwellings[dwellings.BuildType != 6].Rooms.unique()), LC4404["C_ROOMS"].unique())
+  print("Rooms: Syn, Agg")
+  for i in LC4404["C_ROOMS"].unique():
+    print(len(dwellings[(dwellings.Rooms == i) 
+           & (dwellings.Composition != 6)
+           & (dwellings.BuildType != 6)]),  sum(LC4404[LC4404.C_ROOMS == i].OBS_VALUE))
+  print("Zero rooms: ", len(dwellings[dwellings.Rooms == 0]))
+
+  # Bedrooms (ignoring communal and unoccupied)
+  assert np.array_equal(sorted(dwellings[dwellings.BuildType != 6].Bedrooms.unique()), LC4405["C_BEDROOMS"].unique())
+  print("Bedrooms: Syn, Agg")
+  for i in LC4405["C_BEDROOMS"].unique():
+    print(len(dwellings[(dwellings.Bedrooms == i) 
+           & (dwellings.Composition != 6)
+           & (dwellings.BuildType != 6)]),  sum(LC4405[LC4405.C_BEDROOMS == i].OBS_VALUE))
+  print("Zero bedrooms: ", len(dwellings[dwellings.Bedrooms == 0]))
+
   print("DONE")
+
 
 
 # TODO make private static nonmember...
@@ -304,12 +345,11 @@ def people_per_bedroom(people, bedrooms):
   ppbed = people / bedrooms
   if ppbed <= 0.5:
     return 1 # (0,0.5]
-  elif ppbed <= 1:
+  if ppbed <= 1:
     return 2 # (0.5, 1]
-  elif ppbed <= 1.5:
+  if ppbed <= 1.5:
     return 3 # (1, 1.5]
-  else: 
-    return 4 # >1.5
+  return 4 # >1.5
 
 if __name__ == "__main__":
   main()
