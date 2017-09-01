@@ -2,6 +2,7 @@
 
 # run script for Household microsynthesis
 
+import sys
 import time
 import numpy as np
 import pandas as pd
@@ -27,8 +28,9 @@ RESOLUTION = Api.Nomisweb.OA
 # QS420EW - Communal establishment management and type - Communal establishments
 # QS421EW - Communal establishment management and type - People
 # TODO: household reference person ethnicity and economic status, no. of cars
+# TODO: differentiate between purpose-built and converted flats?
 
-def main():
+def main(region, resolution):
 
   # start timing
   start_time = time.time()
@@ -36,7 +38,7 @@ def main():
   # specify cache directory
   microsynthesiser = Microsynthesiser.Microsynthesis("/tmp/UKCensusAPI")
 
-  (LC4402, LC4404, LC4405, LC4408, LC1105, KS401, COMMUNAL) = microsynthesiser.get_census_data(REGION, RESOLUTION)
+  (LC4402, LC4404, LC4405, LC4408, LC1105, KS401, COMMUNAL) = microsynthesiser.get_census_data(region, resolution)
 
   # generate indices
   type_index = LC4402.C_TYPACCOM.unique()
@@ -352,5 +354,11 @@ def people_per_bedroom(people, bedrooms):
   return 4 # >1.5
 
 if __name__ == "__main__":
-  main()
-
+  if len(sys.argv) !=2:
+    print("usage:", sys.argv[0], "<region[,region...]> <location>")
+    return
+  
+  # TODO string to enumeration...or change enum to string
+  region = REGION
+  resolution = RESOLUTION
+  main(region, resolution)
