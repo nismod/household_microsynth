@@ -356,7 +356,6 @@ def people_per_bedroom(people, bedrooms):
 if __name__ == "__main__":
   if len(sys.argv) !=2:
     print("usage:", sys.argv[0], "<region[,region...]> <location>")
-    return
   
   # TODO string to enumeration...or change enum to string
   region = REGION
