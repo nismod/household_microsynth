@@ -16,7 +16,11 @@ setup(name='household_microsynth',
   license='MIT',
   packages=['household_microsynth'],
   zip_safe=False,
+  install_requires=['distutils_pytest', 'humanleague', 'ukcensusapi'],
+  dependency_links=['git+git://github.com/virgesmith/humanleague.git#egg=humanleague-1.0',
+                    'git+git://github.com/virgesmith/UKCensusAPI.git#egg=ukcensusapi'],
   test_suite='nose.collector',
   tests_require=['nose'],
+  python_requires='>=3'
   #scripts=['scripts/run_microsynth.py']
 )
