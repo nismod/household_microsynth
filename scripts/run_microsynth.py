@@ -2,6 +2,7 @@
 
 # run script for Household microsynthesis
 
+import sys
 import time
 import numpy as np
 import pandas as pd
@@ -10,12 +11,13 @@ import ukcensusapi.Nomisweb as Api
 import household_microsynth.Microsynthesis as Microsynthesiser
 
 assert humanleague.version() == 1
+CACHE_DIR = "./cache"
 
-# Set country or local authority/ies here
-REGION = "City of London"
-#REGION = "Newcastle upon Tyne"
-# Set resolution LA/MSOA/LSOA/OA
-RESOLUTION = Api.Nomisweb.OA
+# # Set country or local authority/ies here
+# REGION = "City of London"
+# #REGION = "Newcastle upon Tyne"
+# # Set resolution LA/MSOA/LSOA/OA
+# RESOLUTION = Api.Nomisweb.OA
 
 # The microsynthesis makes use of the following tables:
 # LC4402EW - Accommodation type by type of central heating in household by tenure
@@ -28,41 +30,46 @@ RESOLUTION = Api.Nomisweb.OA
 # QS421EW - Communal establishment management and type - People
 # TODO: household reference person ethnicity and economic status, no. of cars
 
-def main():
+def main(region, resolution):
 
   # start timing
   start_time = time.time()
 
   # specify cache directory
-  microsynthesiser = Microsynthesiser.Microsynthesis("/tmp/UKCensusAPI")
+  microsynthesiser = Microsynthesiser.Microsynthesis(CACHE_DIR)
 
-  (LC4402, LC4404, LC4405, LC4408, LC1105, KS401, COMMUNAL) = microsynthesiser.get_census_data(REGION, RESOLUTION)
+  # convert string to enum
+  print("Microsynthesis region: ", region)
+  print("Microsynthesis resolution: ", resolution)
+  resolution = microsynthesiser.Area[resolution]
+  #(microsynthesiser.lc4402, microsynthesiser.lc4404, microsynthesiser.lc4405, microsynthesiser.lc4408, microsynthesiser.lc1105, microsynthesiser.ks401, communal) = 
+  microsynthesiser.get_census_data(region, resolution)
 
   # generate indices
-  type_index = LC4402.C_TYPACCOM.unique()
+  type_index = microsynthesiser.lc4402.C_TYPACCOM.unique()
   type_index = np.append(type_index, 6) # this value denotes communal
-  tenure_index = LC4402.C_TENHUK11.unique()
-  ch_index = LC4402.C_CENHEATHUK11.unique()
-  ppb_index = LC4408.C_PPBROOMHEW11.unique()
-  comp_index = LC4408.C_AHTHUK11.unique()
+  tenure_index = microsynthesiser.lc4402.C_TENHUK11.unique()
+  ch_index = microsynthesiser.lc4402.C_CENHEATHUK11.unique()
+  ppb_index = microsynthesiser.lc4408.C_PPBROOMHEW11.unique()
+  comp_index = microsynthesiser.lc4408.C_AHTHUK11.unique()
   comp_index = np.append(comp_index, 6) # this value denotes unoccupied
 
   # Do some basic checks on totals
-  total_occ_dwellings = sum(LC4402.OBS_VALUE)
+  total_occ_dwellings = sum(microsynthesiser.lc4402.OBS_VALUE)
   print(total_occ_dwellings)
-  assert sum(LC4404.OBS_VALUE) == total_occ_dwellings
-  assert sum(LC4405.OBS_VALUE) == total_occ_dwellings
-  assert sum(LC4408.OBS_VALUE) == total_occ_dwellings
-  assert sum(KS401[KS401.CELL == 5].OBS_VALUE) == total_occ_dwellings
+  assert sum(microsynthesiser.lc4404.OBS_VALUE) == total_occ_dwellings
+  assert sum(microsynthesiser.lc4405.OBS_VALUE) == total_occ_dwellings
+  assert sum(microsynthesiser.lc4408.OBS_VALUE) == total_occ_dwellings
+  assert sum(microsynthesiser.ks401[microsynthesiser.ks401.CELL == 5].OBS_VALUE) == total_occ_dwellings
 
-  total_dwellings = sum(LC1105.OBS_VALUE)
-  total_households = sum(KS401.OBS_VALUE)
-  total_communal = sum(COMMUNAL.OBS_VALUE)
+  total_dwellings = sum(microsynthesiser.lc1105.OBS_VALUE)
+  total_households = sum(microsynthesiser.ks401.OBS_VALUE)
+  total_communal = sum(microsynthesiser.communal.OBS_VALUE)
   total_dwellings = total_households + total_communal
 
-  occ_pop_lbound = sum(LC4404.C_SIZHUK11 * LC4404.OBS_VALUE)
-  household_dwellings = sum(LC1105[LC1105.C_RESIDENCE_TYPE == 1].OBS_VALUE)
-  communal_dwellings = sum(LC1105[LC1105.C_RESIDENCE_TYPE == 2].OBS_VALUE)
+  occ_pop_lbound = sum(microsynthesiser.lc4404.C_SIZHUK11 * microsynthesiser.lc4404.OBS_VALUE)
+  household_dwellings = sum(microsynthesiser.lc1105[microsynthesiser.lc1105.C_RESIDENCE_TYPE == 1].OBS_VALUE)
+  communal_dwellings = sum(microsynthesiser.lc1105[microsynthesiser.lc1105.C_RESIDENCE_TYPE == 2].OBS_VALUE)
 
   print("Households: ", total_households)
   print("Occupied households: ", total_occ_dwellings)
@@ -78,9 +85,9 @@ def main():
 
   # TODO move this code into the Microsynthesise class...
 
-  all_areas = LC4402.GEOGRAPHY_CODE.unique()
-  all_tenures = LC4402.C_TENHUK11.unique() # assumes same as LC4404/5.C_TENHUK11
-  all_occupants = LC4404.C_SIZHUK11.unique() # assumes same as LC4405.C_SIZHUK11
+  all_areas = microsynthesiser.lc4402.GEOGRAPHY_CODE.unique()
+  all_tenures = microsynthesiser.lc4402.C_TENHUK11.unique() # assumes same as microsynthesiser.lc4404/5.C_TENHUK11
+  all_occupants = microsynthesiser.lc4404.C_SIZHUK11.unique() # assumes same as microsynthesiser.lc4405.C_SIZHUK11
 
   categories = ["Area", "BuildType", "Tenure", "Composition", "Occupants", "Rooms", "Bedrooms", "PPerBed", "CentralHeating"]
 
@@ -99,9 +106,9 @@ def main():
   for area in all_areas:
     for tenure in tenure_index:
       # 1. unconstrained usim of type and central heating 
-      thdata_raw = LC4402.loc[(LC4402.GEOGRAPHY_CODE == area) 
-                    & (LC4402.C_TENHUK11 == tenure)
-                    & (LC4402.OBS_VALUE != 0)]
+      thdata_raw = microsynthesiser.lc4402.loc[(microsynthesiser.lc4402.GEOGRAPHY_CODE == area) 
+                    & (microsynthesiser.lc4402.C_TENHUK11 == tenure)
+                    & (microsynthesiser.lc4402.OBS_VALUE != 0)]
       #print(area)
       #print(thdata_raw)
       thdata = np.vstack((np.repeat(thdata_raw.C_TYPACCOM.as_matrix(), thdata_raw.OBS_VALUE.as_matrix()),
@@ -119,12 +126,12 @@ def main():
 
       # 2. constrained usim of rooms and bedrooms
       for occ in all_occupants:
-        rmarginal = LC4404[(LC4404.GEOGRAPHY_CODE == area) 
-                         & (LC4404.C_TENHUK11 == tenure)
-                         & (LC4404.C_SIZHUK11 == occ)].OBS_VALUE.as_matrix()
-        bmarginal = LC4405[(LC4405.GEOGRAPHY_CODE == area) 
-                         & (LC4405.C_TENHUK11 == tenure)
-                         & (LC4405.C_SIZHUK11 == occ)].OBS_VALUE.as_matrix()
+        rmarginal = microsynthesiser.lc4404[(microsynthesiser.lc4404.GEOGRAPHY_CODE == area) 
+                         & (microsynthesiser.lc4404.C_TENHUK11 == tenure)
+                         & (microsynthesiser.lc4404.C_SIZHUK11 == occ)].OBS_VALUE.as_matrix()
+        bmarginal = microsynthesiser.lc4405[(microsynthesiser.lc4405.GEOGRAPHY_CODE == area) 
+                         & (microsynthesiser.lc4405.C_TENHUK11 == tenure)
+                         & (microsynthesiser.lc4405.C_SIZHUK11 == occ)].OBS_VALUE.as_matrix()
 
         usim = humanleague.synthPopG(rmarginal, bmarginal, permitted)
         pop = usim["result"]
@@ -148,10 +155,10 @@ def main():
              & (dwellings.Occupants == 1), "Composition"] = 1
 
       # randomly assign the rest (see below)
-      compdata_raw = LC4408.loc[(LC4408.GEOGRAPHY_CODE == area)
-                          & (LC4408.C_TENHUK11 == tenure)
-                          & (LC4408.C_AHTHUK11 != 1)
-                          & (LC4408.OBS_VALUE > 0)]
+      compdata_raw = microsynthesiser.lc4408.loc[(microsynthesiser.lc4408.GEOGRAPHY_CODE == area)
+                          & (microsynthesiser.lc4408.C_TENHUK11 == tenure)
+                          & (microsynthesiser.lc4408.C_AHTHUK11 != 1)
+                          & (microsynthesiser.lc4408.OBS_VALUE > 0)]
 
       compdata = np.vstack((np.repeat(compdata_raw.C_PPBROOMHEW11.as_matrix(), compdata_raw.OBS_VALUE.as_matrix()),
                  np.repeat(compdata_raw.C_AHTHUK11.as_matrix(), compdata_raw.OBS_VALUE.as_matrix()))).T
@@ -177,7 +184,7 @@ def main():
 #                    & (dwellings.Composition != 1), "PPerBed"] = compdata[:,0]
 
     # communal
-    area_communal = COMMUNAL.loc[(COMMUNAL.GEOGRAPHY_CODE == area) & (COMMUNAL.OBS_VALUE > 0)]
+    area_communal = microsynthesiser.communal.loc[(microsynthesiser.communal.GEOGRAPHY_CODE == area) & (microsynthesiser.communal.OBS_VALUE > 0)]
 
     #print(area, len(area_communal))
     for i in range(0, len(area_communal)):
@@ -209,13 +216,13 @@ def main():
     
     # unoccupied, should be one entry per area
     # microsynthesise the occupied houses by BuildType, Tenure, CentralHeating and sample the unoccupied from this dwellings
-    unocc = KS401.loc[(KS401.GEOGRAPHY_CODE == area) & (KS401.CELL == 6)]
+    unocc = microsynthesiser.ks401.loc[(microsynthesiser.ks401.GEOGRAPHY_CODE == area) & (microsynthesiser.ks401.CELL == 6)]
     assert len(unocc == 1)
     n_unocc = unocc.at[unocc.index[0], "OBS_VALUE"]
 
     if n_unocc:
       # type marginal
-      type_tenure_ch = LC4402.loc[LC4402.GEOGRAPHY_CODE == area]
+      type_tenure_ch = microsynthesiser.lc4402.loc[microsynthesiser.lc4402.GEOGRAPHY_CODE == area]
       type_marginal = type_tenure_ch.groupby("C_TYPACCOM").agg({"OBS_VALUE":np.sum})["OBS_VALUE"].as_matrix()
       # tenure marginal
       tenure_marginal = type_tenure_ch.groupby("C_TENHUK11").agg({"OBS_VALUE":np.sum})["OBS_VALUE"].as_matrix()
@@ -295,45 +302,45 @@ def main():
   print("BuildType: Syn, Agg")
   for i in type_index:
     if i != 6:
-      print(len(dwellings[(dwellings.BuildType == i) & (dwellings.Composition != 6)]), sum(LC4402[LC4402.C_TYPACCOM == i].OBS_VALUE))
+      print(len(dwellings[(dwellings.BuildType == i) & (dwellings.Composition != 6)]), sum(microsynthesiser.lc4402[microsynthesiser.lc4402.C_TYPACCOM == i].OBS_VALUE))
     else: 
-      print(len(dwellings[(dwellings.BuildType == i) & (dwellings.Composition != 6)]), sum(COMMUNAL.OBS_VALUE))
+      print(len(dwellings[(dwellings.BuildType == i) & (dwellings.Composition != 6)]), sum(microsynthesiser.communal.OBS_VALUE))
 
   # Tenure
   for i in tenure_index:
-    assert len(dwellings[(dwellings.Tenure == i) & (dwellings.Composition != 6)]) == sum(LC4402[LC4402.C_TENHUK11 == i].OBS_VALUE)
+    assert len(dwellings[(dwellings.Tenure == i) & (dwellings.Composition != 6)]) == sum(microsynthesiser.lc4402[microsynthesiser.lc4402.C_TENHUK11 == i].OBS_VALUE)
 
   # central heating (ignoring unoccupied) 
   print("CentHeat: Syn, Agg")
   for i in ch_index:
     print( len(dwellings[(dwellings.CentralHeating == i) 
                        & (dwellings.Composition != 6)
-                       & (dwellings.BuildType != 6)]) , sum(LC4402[LC4402.C_CENHEATHUK11 == i].OBS_VALUE))
+                       & (dwellings.BuildType != 6)]) , sum(microsynthesiser.lc4402[microsynthesiser.lc4402.C_CENHEATHUK11 == i].OBS_VALUE))
 
   # composition 
   print("Comp: Syn, Agg")
   for i in comp_index:
     if i != 6:
-      print(len(dwellings[(dwellings.Composition == i) & (dwellings.BuildType != 6)]),  sum(LC4408[LC4408.C_AHTHUK11 == i].OBS_VALUE))
+      print(len(dwellings[(dwellings.Composition == i) & (dwellings.BuildType != 6)]),  sum(microsynthesiser.lc4408[microsynthesiser.lc4408.C_AHTHUK11 == i].OBS_VALUE))
     else:
-      print(len(dwellings[(dwellings.Composition == i) & (dwellings.BuildType != 6)]),  sum(KS401[KS401.CELL == 6].OBS_VALUE))
+      print(len(dwellings[(dwellings.Composition == i) & (dwellings.BuildType != 6)]),  sum(microsynthesiser.ks401[microsynthesiser.ks401.CELL == 6].OBS_VALUE))
 
   # Rooms (ignoring communal and unoccupied)
-  assert np.array_equal(sorted(dwellings[dwellings.BuildType != 6].Rooms.unique()), LC4404["C_ROOMS"].unique())
+  assert np.array_equal(sorted(dwellings[dwellings.BuildType != 6].Rooms.unique()), microsynthesiser.lc4404["C_ROOMS"].unique())
   print("Rooms: Syn, Agg")
-  for i in LC4404["C_ROOMS"].unique():
+  for i in microsynthesiser.lc4404["C_ROOMS"].unique():
     print(len(dwellings[(dwellings.Rooms == i) 
            & (dwellings.Composition != 6)
-           & (dwellings.BuildType != 6)]),  sum(LC4404[LC4404.C_ROOMS == i].OBS_VALUE))
+           & (dwellings.BuildType != 6)]),  sum(microsynthesiser.lc4404[microsynthesiser.lc4404.C_ROOMS == i].OBS_VALUE))
   print("Zero rooms: ", len(dwellings[dwellings.Rooms == 0]))
 
   # Bedrooms (ignoring communal and unoccupied)
-  assert np.array_equal(sorted(dwellings[dwellings.BuildType != 6].Bedrooms.unique()), LC4405["C_BEDROOMS"].unique())
+  assert np.array_equal(sorted(dwellings[dwellings.BuildType != 6].Bedrooms.unique()), microsynthesiser.lc4405["C_BEDROOMS"].unique())
   print("Bedrooms: Syn, Agg")
-  for i in LC4405["C_BEDROOMS"].unique():
+  for i in microsynthesiser.lc4405["C_BEDROOMS"].unique():
     print(len(dwellings[(dwellings.Bedrooms == i) 
            & (dwellings.Composition != 6)
-           & (dwellings.BuildType != 6)]),  sum(LC4405[LC4405.C_BEDROOMS == i].OBS_VALUE))
+           & (dwellings.BuildType != 6)]),  sum(microsynthesiser.lc4405[microsynthesiser.lc4405.C_BEDROOMS == i].OBS_VALUE))
   print("Zero bedrooms: ", len(dwellings[dwellings.Bedrooms == 0]))
 
   print("DONE")
@@ -352,5 +359,13 @@ def people_per_bedroom(people, bedrooms):
   return 4 # >1.5
 
 if __name__ == "__main__":
-  main()
+  if len(sys.argv) != 3:
+    print("usage:", sys.argv[0], "<region(s)> <resolution>")
+    print("e.g:", sys.argv[0], "\"Newcastle upon Tyne\" OA")
+    print("    ", sys.argv[0], "\"Leeds, Bradford\" MSOA")
+  else:  
+    region = sys.argv[1]
+    resolution = sys.argv[2]
+    main(region, resolution) 
+
 

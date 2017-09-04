@@ -1,30 +1,31 @@
 from unittest import TestCase
 
-import household_microsynth.microsynthesis as hhms
-import ukcensusapi.Nomisweb as Api
+#import ukcensusapi.Nomisweb as Api
+import household_microsynth.Microsynthesis as Households
 
 class Test(TestCase):
-  api = Api.Nomisweb("./")
+  cache = "./cache"
+  microsynth = Households.Microsynthesis(cache)
   #query = Census.Query(api)
 
   # just to ensure test harness works
   def test_init(self):
     self.assertTrue(True)
 
-  def test_getCensusData(self):
+  def test_get_census_data(self):
     region = "City of London"
-    resolution = Api.Nomisweb.MSOA
+    resolution = self.microsynth.api.MSOA # "MSOA" 
     nDwellings = 5530
     nOccDwellings = 4385
     nPeople = 7375
-
-    (LC4402, LC4404, LC4405, LC4408, LC1105EW, KS401EW) = hhms.getCensusData(region, resolution)
+   
+    self.microsynth.get_census_data(region, resolution)
     # check geography is correct
-    self.assertTrue(LC4402.GEOGRAPHY_CODE.unique() == ['E02000001'])
+    self.assertTrue(self.microsynth.lc4402.GEOGRAPHY_CODE.unique() == ['E02000001'])
     # check totals are correct
-    self.assertTrue(LC4402.OBS_VALUE.sum() == nOccDwellings)    
-    self.assertTrue(LC4404.OBS_VALUE.sum() == nOccDwellings)    
-    self.assertTrue(LC4405.OBS_VALUE.sum() == nOccDwellings)    
-    self.assertTrue(LC4408.OBS_VALUE.sum() == nOccDwellings) 
-    self.assertTrue(LC1105EW.OBS_VALUE.sum() == nPeople)    
-    self.assertTrue(KS401EW.OBS_VALUE.sum() == nDwellings)
+    self.assertTrue(self.microsynth.lc4402.OBS_VALUE.sum() == nOccDwellings)    
+    self.assertTrue(self.microsynth.lc4404.OBS_VALUE.sum() == nOccDwellings)    
+    self.assertTrue(self.microsynth.lc4405.OBS_VALUE.sum() == nOccDwellings)    
+    self.assertTrue(self.microsynth.lc4408.OBS_VALUE.sum() == nOccDwellings) 
+    self.assertTrue(self.microsynth.lc1105.OBS_VALUE.sum() == nPeople)    
+    self.assertTrue(self.microsynth.ks401.OBS_VALUE.sum() == nDwellings)
