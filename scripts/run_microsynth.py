@@ -87,6 +87,9 @@ def main(region, resolution):
   # TODO move this code into the Microsynthesise class...
 
   all_areas = microsynthesiser.lc4402.GEOGRAPHY_CODE.unique()
+
+  print("Number of geographical areas: ", len(all_areas))
+
   all_tenures = microsynthesiser.lc4402.C_TENHUK11.unique() # assumes same as microsynthesiser.lc4404/5.C_TENHUK11
   all_occupants = microsynthesiser.lc4404.C_SIZHUK11.unique() # assumes same as microsynthesiser.lc4405.C_SIZHUK11
 
