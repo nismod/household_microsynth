@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 #import ukcensusapi.Nomisweb as Api
-import household_microsynth.Microsynthesis as Households
+import household_microsynth.microsynthesis as Households
 
 class Test(TestCase):
   cache = "./cache"

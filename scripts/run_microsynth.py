@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import humanleague
 import ukcensusapi.Nomisweb as Api
-import household_microsynth.Microsynthesis as Microsynthesiser
+import household_microsynth.microsynthesis as Microsynthesiser
 
 assert humanleague.version() == 1
 CACHE_DIR = "./cache"
@@ -29,6 +29,7 @@ CACHE_DIR = "./cache"
 # QS420EW - Communal establishment management and type - Communal establishments
 # QS421EW - Communal establishment management and type - People
 # TODO: household reference person ethnicity and economic status, no. of cars
+# TODO: differentiate between purpose-built and converted flats?
 
 def main(region, resolution):
 
