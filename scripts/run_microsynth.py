@@ -8,9 +8,9 @@ import numpy as np
 import pandas as pd
 import humanleague
 import ukcensusapi.Nomisweb as Api
-import household_microsynth.Microsynthesis as Microsynthesiser
+import household_microsynth.microsynthesis as Microsynthesiser
 
-assert humanleague.version() == 1
+assert humanleague.version() >= 1
 
 # Set country or local authority/ies here
 REGION = "City of London"
