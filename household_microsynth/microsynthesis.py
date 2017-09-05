@@ -20,6 +20,9 @@ class Microsynthesis:
     "OA": Api.Nomisweb.OA
   }
 
+  # Value to use where category value is not known/applicable
+  UNKNOWN = -1 
+
   # initialise, supplying geographical area and resolution , plus (optionally) a location to cache downloads
   def __init__(self, region, resolution, cache_dir = "./cache"):
     self.api = Api.Nomisweb(cache_dir)
@@ -41,7 +44,7 @@ class Microsynthesis:
     self.__get_census_data(self.region, self.resolution)
 
     # initialise table and index
-    categories = ["Area", "BuildType", "Tenure", "Composition", "Occupants", "Rooms", "Bedrooms", "PPerBed", "CentralHeating"]
+    categories = ["Area", "BuildType", "Tenure", "Composition", "Occupants", "Rooms", "Bedrooms", "PPerBed", "CentralHeating", "Cars", "EconStatus", "Ethnicity"]
     self.total_dwellings = sum(self.ks401.OBS_VALUE) + sum(self.communal.OBS_VALUE)
     self.dwellings = pd.DataFrame(index=range(0, self.total_dwellings), columns=categories)
     self.index = 0
@@ -93,12 +96,32 @@ class Microsynthesis:
     thdata_raw = self.lc4402.loc[(self.lc4402.GEOGRAPHY_CODE == area) 
                   & (self.lc4402.C_TENHUK11 == tenure)
                   & (self.lc4402.OBS_VALUE != 0)]
-    #print(area)
-    #print(thdata_raw)
+
+    careth_raw = self.lc4202.loc[(self.lc4202.GEOGRAPHY_CODE == area)
+                             & (self.lc4202.C_TENHUK11 == tenure)
+                             & (self.lc4202.OBS_VALUE != 0)]
+  
+    econ_raw = self.lc4601.loc[(self.lc4601.GEOGRAPHY_CODE == area)
+                             & (self.lc4601.C_TENHUK11 == tenure)
+                             & (self.lc4601.OBS_VALUE != 0)]
+
     thdata = np.vstack((np.repeat(thdata_raw.C_TYPACCOM.as_matrix(), thdata_raw.OBS_VALUE.as_matrix()),
-              np.repeat(thdata_raw.C_CENHEATHUK11.as_matrix(), thdata_raw.OBS_VALUE.as_matrix()))).T
+                        np.repeat(thdata_raw.C_CENHEATHUK11.as_matrix(), thdata_raw.OBS_VALUE.as_matrix()))).T
+
+    careth = np.vstack((np.repeat(careth_raw.C_CARSNO.as_matrix(), careth_raw.OBS_VALUE.as_matrix()),
+                        np.repeat(careth_raw.C_ETHHUK11.as_matrix(), careth_raw.OBS_VALUE.as_matrix()))).T
+
+    econ = np.repeat(econ_raw.C_ECOPUK11.as_matrix(), econ_raw.OBS_VALUE.as_matrix())
+
+    # TODO workaround for issue where
+    if len(thdata) != len(econ):
+      print("Count mismatch between accom type/econ status in", area, len(thdata), "vs", len(econ))
+      print(thdata_raw)
+      print(econ_raw)
+
     # randomise to eliminate bias w.r.t. occupants/rooms/bedrooms
     np.random.shuffle(thdata)
+    np.random.shuffle(careth)
     #print(thdata.T)
 
     subindex = self.index
@@ -106,8 +129,10 @@ class Microsynthesis:
     for i in range(0, len(thdata)):
       self.dwellings.at[subindex, "BuildType"] = thdata[i][0]
       self.dwellings.at[subindex, "CentralHeating"] = thdata[i][1]
+      self.dwellings.at[subindex, "Cars"] = careth[i][0]
+      self.dwellings.at[subindex, "Ethnicity"] = careth[i][1]
+      self.dwellings.at[subindex, "EconStatus"] = self.UNKNOWN
       subindex += 1
-
 
   # 2. constrained usim of rooms and bedrooms
   def __step2(self, area, tenure, all_occupants):
@@ -197,8 +222,11 @@ class Microsynthesis:
         self.dwellings.at[self.index, "Rooms"] = occ_array[j]
         self.dwellings.at[self.index, "Bedrooms"] = occ_array[j]
         self.dwellings.at[self.index, "Composition"] = 5
-        self.dwellings.at[self.index, "PPerBed"] = 2
+        self.dwellings.at[self.index, "PPerBed"] = 2 # 1-1.5
         self.dwellings.at[self.index, "CentralHeating"] = 2 # assume all communal are centrally heated
+        self.dwellings.at[self.index, "Cars"] = self.UNKNOWN
+        self.dwellings.at[self.index, "Ethnicity"] = 5 # assume mixed/multiple
+        self.dwellings.at[self.index, "EconStatus"] = self.UNKNOWN
         self.index += 1
 
   # unoccupied, should be one entry per area
@@ -240,6 +268,9 @@ class Microsynthesis:
         self.dwellings.at[self.index, "Composition"] = 6
         self.dwellings.at[self.index, "PPerBed"] = 1
         self.dwellings.at[self.index, "CentralHeating"] = ch_index[unocc_pop.at[j, "CentralHeating"]]
+        self.dwellings.at[self.index, "Cars"] = 1 # no occupants so no cars
+        self.dwellings.at[self.index, "Ethnicity"] = self.UNKNOWN
+        self.dwellings.at[self.index, "EconStatus"] = self.UNKNOWN
         self.index += 1
 
   # rooms and beds for unoccupied (sampled from occupied population in same area and same BuildType)
@@ -258,7 +289,7 @@ class Microsynthesis:
 
       self.dwellings.at[i, "Rooms"] = r
       self.dwellings.at[i, "Bedrooms"] = b 
-      self.dwellings.at[i, "PPerBed"] = Utils.people_per_bedroom(r, b)
+      #self.dwellings.at[i, "PPerBed"] = 1 # <= 0.5
 
   # Retrieves census tables for the specified geography
   # checks for locally cached data or calls nomisweb API
@@ -341,7 +372,8 @@ class Microsynthesis:
     table = "NM_899_1"
     query_params = common_params.copy()
     query_params["C_TENHUK11"] = "2,3,5,6"
-    query_params["C_ECOPUK11"] = "4,5,7,8,9,11,12,14...18"
+    #query_params["C_ECOPUK11"] = "4,5,7,8,9,11,12,14...18"
+    query_params["C_ECOPUK11"] = "0" # even this is sometimes 1 fewer obs than other tables
     query_params["C_AGE"] = "0"
     query_params["select"] = "GEOGRAPHY_CODE,C_TENHUK11,C_ECOPUK11,OBS_VALUE"
     # TODO query_params["geography"] = ...

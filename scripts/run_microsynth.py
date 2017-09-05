@@ -5,7 +5,7 @@
 import sys
 import time
 import humanleague
-import ukcensusapi.Nomisweb as Api
+#import ukcensusapi.Nomisweb as Api
 import household_microsynth.microsynthesis as Microsynthesiser
 import household_microsynth.utils as Utils
 
@@ -66,6 +66,7 @@ def main(region, resolution):
   print("Dwellings: ", total_dwellings)
 
   print("Total dwellings: ", total_dwellings)
+  print("Total population: ", total_population)
   print("Population in occupied households: ", household_dwellings)
   print("Population in communal residences: ", communal_dwellings)
   print("Population lower bound from occupied households: ", occ_pop_lbound)
@@ -93,6 +94,6 @@ if __name__ == "__main__":
     print("e.g:", sys.argv[0], "\"Newcastle upon Tyne\" OA")
     print("    ", sys.argv[0], "\"Leeds, Bradford\" MSOA")
   else:  
-    region = sys.argv[1]
-    resolution = sys.argv[2]
-    main(region, resolution) 
+    REGION = sys.argv[1]
+    RESOLUTION = sys.argv[2]
+    main(REGION, RESOLUTION) 
