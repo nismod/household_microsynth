@@ -27,9 +27,12 @@ pip3 install git+git://github.com/virgesmith/humanleague.git@1.0.1
 ### Running
 
 ```
-python3 scripts/run_microsynth.py
+scripts/run_microsynth.py <region(s)> <resolution>
 ```
-
+where region can be a one or more local authorities (or England/EngWales) and resolution can be one of: LA, MSOA, LSOA, OA. If spaces in the former, enclose the argument in quotes, e.g.
+```
+scripts/run_microsynth.py "City of London" OA
+```
 # Introduction
 
 This document outlines the methodology and software implementation of a scalable small area microsynthesis of dwellings in a given region. It uses a microsynthesis technique developed by the author (publication in peer review) that uses quasirandom sampling to directly generate non-fractional populations very efficently.
