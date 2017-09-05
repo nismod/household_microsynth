@@ -264,6 +264,8 @@ class Microsynthesis:
   # checks for locally cached data or calls nomisweb API
   def __get_census_data(self, region, resolution):
     region_codes = self.api.get_lad_codes(region)
+    if not len(region_codes):
+      raise ValueError("no regions match the input: \"" + region + "\"")
     area_codes = self.api.get_geo_codes(region_codes, resolution)
 
     # assignment does shallow copy, need to use .copy() to avoid this getting query_params fields
