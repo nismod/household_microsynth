@@ -9,6 +9,7 @@ import pandas as pd
 import humanleague
 import ukcensusapi.Nomisweb as Api
 import household_microsynth.microsynthesis as Microsynthesiser
+import household_microsynth.utils as Utils
 
 assert humanleague.version() == 1
 CACHE_DIR = "./cache"
@@ -97,60 +98,63 @@ def main(region, resolution):
 
   dwellings = pd.DataFrame(index=range(0, total_dwellings), columns=categories)
   
-  # permitted states for rooms/bedrooms
-  permitted = np.ones((6, 4))
-  permitted[0, 1] = 0
-  permitted[0, 2] = 0
-  permitted[0, 3] = 0
-  permitted[1, 2] = 0
-  permitted[1, 3] = 0
-  permitted[2, 3] = 0
+  # # permitted states for rooms/bedrooms
+  # permitted = np.ones((6, 4))
+  # permitted[0, 1] = 0
+  # permitted[0, 2] = 0
+  # permitted[0, 3] = 0
+  # permitted[1, 2] = 0
+  # permitted[1, 3] = 0
+  # permitted[2, 3] = 0
 
   index = 0
   for area in all_areas:
     for tenure in tenure_index:
-      # 1. unconstrained usim of type and central heating 
-      thdata_raw = microsynthesiser.lc4402.loc[(microsynthesiser.lc4402.GEOGRAPHY_CODE == area) 
-                    & (microsynthesiser.lc4402.C_TENHUK11 == tenure)
-                    & (microsynthesiser.lc4402.OBS_VALUE != 0)]
-      #print(area)
-      #print(thdata_raw)
-      thdata = np.vstack((np.repeat(thdata_raw.C_TYPACCOM.as_matrix(), thdata_raw.OBS_VALUE.as_matrix()),
-                np.repeat(thdata_raw.C_CENHEATHUK11.as_matrix(), thdata_raw.OBS_VALUE.as_matrix()))).T
-      # randomise to eliminate bias w.r.t. occupants/rooms/bedrooms
-      np.random.shuffle(thdata)
-      #print(thdata.T)
 
-      subindex = index
-      # TODO vectorise
-      for i in range(0, len(thdata)):
-        dwellings.at[subindex, "BuildType"] = thdata[i][0]
-        dwellings.at[subindex, "CentralHeating"] = thdata[i][1]
-        subindex += 1
+      # # 1. unconstrained usim of type and central heating 
+      # thdata_raw = microsynthesiser.lc4402.loc[(microsynthesiser.lc4402.GEOGRAPHY_CODE == area) 
+      #               & (microsynthesiser.lc4402.C_TENHUK11 == tenure)
+      #               & (microsynthesiser.lc4402.OBS_VALUE != 0)]
+      # #print(area)
+      # #print(thdata_raw)
+      # thdata = np.vstack((np.repeat(thdata_raw.C_TYPACCOM.as_matrix(), thdata_raw.OBS_VALUE.as_matrix()),
+      #           np.repeat(thdata_raw.C_CENHEATHUK11.as_matrix(), thdata_raw.OBS_VALUE.as_matrix()))).T
+      # # randomise to eliminate bias w.r.t. occupants/rooms/bedrooms
+      # np.random.shuffle(thdata)
+      # #print(thdata.T)
 
-      # 2. constrained usim of rooms and bedrooms
-      for occ in all_occupants:
-        rmarginal = microsynthesiser.lc4404[(microsynthesiser.lc4404.GEOGRAPHY_CODE == area) 
-                         & (microsynthesiser.lc4404.C_TENHUK11 == tenure)
-                         & (microsynthesiser.lc4404.C_SIZHUK11 == occ)].OBS_VALUE.as_matrix()
-        bmarginal = microsynthesiser.lc4405[(microsynthesiser.lc4405.GEOGRAPHY_CODE == area) 
-                         & (microsynthesiser.lc4405.C_TENHUK11 == tenure)
-                         & (microsynthesiser.lc4405.C_SIZHUK11 == occ)].OBS_VALUE.as_matrix()
+      # subindex = index
+      # # TODO vectorise
+      # for i in range(0, len(thdata)):
+      #   dwellings.at[subindex, "BuildType"] = thdata[i][0]
+      #   dwellings.at[subindex, "CentralHeating"] = thdata[i][1]
+      #   subindex += 1
 
-        usim = humanleague.synthPopG(rmarginal, bmarginal, permitted)
-        pop = usim["result"]
-        assert(usim["conv"])
-        #print(len(pop[0]))
-        for i in range(0, len(pop[0])):
-          # TODO why does moving this to above break consistency checks?
-          dwellings.at[index, "Area"] = area
-          dwellings.at[index, "Tenure"] = tenure
-          dwellings.at[index, "Occupants"] = occ
-          dwellings.at[index, "Rooms"] = pop[0][i] + 1 # since "0" means 1 room
-          dwellings.at[index, "Bedrooms"] = pop[1][i] + 1
-          dwellings.at[index, "PPerBed"] = people_per_bedroom(occ, pop[1][i] + 1)
-          index += 1
+      microsynthesiser.step1(area, tenure, index, dwellings)
 
+      # # 2. constrained usim of rooms and bedrooms
+      # for occ in all_occupants:
+      #   rmarginal = microsynthesiser.lc4404[(microsynthesiser.lc4404.GEOGRAPHY_CODE == area) 
+      #                    & (microsynthesiser.lc4404.C_TENHUK11 == tenure)
+      #                    & (microsynthesiser.lc4404.C_SIZHUK11 == occ)].OBS_VALUE.as_matrix()
+      #   bmarginal = microsynthesiser.lc4405[(microsynthesiser.lc4405.GEOGRAPHY_CODE == area) 
+      #                    & (microsynthesiser.lc4405.C_TENHUK11 == tenure)
+      #                    & (microsynthesiser.lc4405.C_SIZHUK11 == occ)].OBS_VALUE.as_matrix()
+
+      #   usim = humanleague.synthPopG(rmarginal, bmarginal, permitted)
+      #   pop = usim["result"]
+      #   assert(usim["conv"])
+      #   #print(len(pop[0]))
+      #   for i in range(0, len(pop[0])):
+      #     # TODO why does moving this to above break consistency checks?
+      #     dwellings.at[index, "Area"] = area
+      #     dwellings.at[index, "Tenure"] = tenure
+      #     dwellings.at[index, "Occupants"] = occ
+      #     dwellings.at[index, "Rooms"] = pop[0][i] + 1 # since "0" means 1 room
+      #     dwellings.at[index, "Bedrooms"] = pop[1][i] + 1
+      #     dwellings.at[index, "PPerBed"] = people_per_bedroom(occ, pop[1][i] + 1)
+      #     index += 1
+      index = microsynthesiser.step2(area, tenure, all_occupants, index, dwellings)
       # 3. "usim" of composition vs personsPerBedroom
       
       # single are unambiguous
@@ -348,19 +352,6 @@ def main(region, resolution):
   print("Zero bedrooms: ", len(dwellings[dwellings.Bedrooms == 0]))
 
   print("DONE")
-
-
-
-# TODO make private static nonmember...
-def people_per_bedroom(people, bedrooms):
-  ppbed = people / bedrooms
-  if ppbed <= 0.5:
-    return 1 # (0,0.5]
-  if ppbed <= 1:
-    return 2 # (0.5, 1]
-  if ppbed <= 1.5:
-    return 3 # (1, 1.5]
-  return 4 # >1.5
 
 if __name__ == "__main__":
   if len(sys.argv) != 3:
