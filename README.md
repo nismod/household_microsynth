@@ -1,12 +1,13 @@
-# Household Microsynthesis
 
-==Work in progress==
+__** WORK IN PROGRESS **__
+
+# Household Microsynthesis
 
 ## Dependencies
 
 `python3`
 
-### [NomiswebApi](https://github.com/virgesmith/UKCensusAPI)
+### [UKCensusAPI](https://github.com/virgesmith/UKCensusAPI)
 ```
 pip3 install git+git://github.com/virgesmith/UKCensusAPI.git
 ```
@@ -84,36 +85,41 @@ The Methodology section explains how these limitations are overcome.
 Example runtime output:
 
 ```
-> scripts/run_microsynth.py "Newcastle upon Tyne" OA
-[1] "using cached data: ./data/ba2e68bdbee8f78c22d9ce04f2234f8a.tsv"
-[1] "using cached data: ./data/b37393e8090530622135c0b81912a303.tsv"
-[1] "using cached data: ./data/8904706b65140065edbc0c88d633afef.tsv"
-[1] "using cached data: ./data/807c2ef23848ca32f5924b391c437e2d.tsv"
-[1] "using cached data: ./data/4d4c67b0081ef8f944abcc29871b4131.tsv"
-[1] "using cached data: ./data/c827514e537cafa57447778b9304ef69.tsv"
-[1] "Dwellings: 121894"
-[1] "Occupied households: 117153"
-[1] "Unoccupied dwellings: 4741"
-[1] "Communal residences: 254"
-[1] "Total population: 280177"
-[1] "Population in occupied households: 271212"
-[1] "Population in communal residences: 8965"
-[1] "Population lower bound from occupied households: 257127"
-[1] "Occupied household population underestimate: 14085"
-[1] "assembly time (s):  257.992512464523"
-[1] "Checking consistency..."
-[1] "Population lower bound from households and communal residences: 266092"
-[1] "Overall population underestimate: 14085"
-[1] "People per bedroom"
-[1] "<=0.5 usim = 33575 , census = 33773"
-[1] "(0.5,1] usim = 62937 , census = 60267"
-[1] "(1,1.5] usim = 15719 , census = 14271"
-[1] ">1.5 usim = 4922 , census = 8842"
-[1] "room/bedroom error count: 0"
-[1] "Writing microsynthesis to ./data/synHomes.csv"
+user@host ~ $ scripts/run_microsynth.py "City of London" OA
+Microsynthesis region:  City of London
+Microsynthesis resolution:  OA
+Cache directory:  ./cache/
+Cacheing local authority codes
+Using cached data: ./cache/LC4402EW_b36188dcd2ba0c6b921680d60da39b04.tsv
+Using cached data: ./cache/LC4404EW_11633101d40d0275d7a74a26de0afe4a.tsv
+Using cached data: ./cache/LC4405EW_95eb69c9b70390671892586181599c70.tsv
+Using cached data: ./cache/LC4408EW_298bf03d9d321aad2557a9d183e8f2a2.tsv
+Using cached data: ./cache/LC1105EW_58d9dbe719f42457bbcc27eef7e9b997.tsv
+Using cached data: ./cache/KS401EW_26cd440a079571f0eec02b0a761e6c99.tsv
+Using cached data: ./cache/QS420EW_42a7d98b44ce0503409213af9330eedd.tsv
+Using cached data: ./cache/QS421EW_efdf6f36faf344559649cac96a264880.tsv
+Writing metadata to  ./cache/LC4202EW_metadata.json
+Downloading and cacheing data: ./cache/LC4202EW_f2a9b899d0d565fe179ce605a59c5e92.tsv
+Using cached data: ./cache/LC4601EW_65674d2abd7ab592e6e2a23e9dcb57b6.tsv
+Households:  5530
+Occupied households:  4385
+Unoccupied dwellings:  1145
+Communal residences:  42
+Dwellings:  5572
+Total dwellings:  5572
+Population in occupied households:  7187
+Population in communal residences:  188
+Population lower bound from occupied households:  7073
+Occupied household dwellings underestimate:  114
+Number of geographical areas:  31
+...............................Done. Exec time(s):  14.46349310874939
+Checking consistency
+OK
+Writing synthetic population to ./synHouseholds.csv
+DONE
 ```
 
-The microsynthesed dwelling population is rendered as a `csv} file. Each row in the table represents an individual dwelling. The columns contain the categories described in the previous section.
+The microsynthesed dwelling population is rendered as a `csv` file. Each row in the table represents an individual dwelling. The columns contain the categories described in the previous section.
 
 For ease of use, enumerated categories (e.g Tenure) are represented in both text and numeric format. The numeric value is generally the same value used by the census; the text values are either the census text, abbreviated in some cases. The tables below map numeric to text values for these categories.
 
@@ -183,7 +189,7 @@ Note the assumptions that were made:
 - The type of communal residences is assigned a single value: `Multi-person'.
 - All communal residences are assumed to have some form of central heating.
 
-# Microsynthesis of Unoccupied Dwellings
+## Microsynthesis of Unoccupied Dwellings
 
 The microsynthesis is constrained only by OA. Note the assumptions that were made:
 
