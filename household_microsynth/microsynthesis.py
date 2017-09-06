@@ -48,8 +48,7 @@ class Microsynthesis:
     self.__get_census_data()
 
     # initialise table and index
-    categories = ["Area", "BuildType", "Tenure", "Composition", "Occupants", "Rooms", "Bedrooms", "PPerBed", "CentralHeating", "EconStatus"]
-    #, "Ethnicity", "NumCars"]
+    categories = ["Area", "BuildType", "Tenure", "Composition", "Occupants", "Rooms", "Bedrooms", "PPerBed", "CentralHeating", "EconStatus", "Ethnicity", "NumCars"]
     self.total_dwellings = sum(self.ks401.OBS_VALUE) + sum(self.communal.OBS_VALUE)
     self.dwellings = pd.DataFrame(index=range(0, self.total_dwellings), columns=categories)
     self.index = 0
@@ -99,14 +98,24 @@ class Microsynthesis:
   def __step1(self, area, tenure):
 
     thdata_raw = self.lc4402.loc[(self.lc4402.GEOGRAPHY_CODE == area) 
-                  & (self.lc4402.C_TENHUK11 == tenure)
-                  & (self.lc4402.OBS_VALUE != 0)]
+                               & (self.lc4402.C_TENHUK11 == tenure)
+                               & (self.lc4402.OBS_VALUE != 0)]
     #print(area)
     #print(thdata_raw)
     thdata = np.vstack((np.repeat(thdata_raw.C_TYPACCOM.as_matrix(), thdata_raw.OBS_VALUE.as_matrix()),
-              np.repeat(thdata_raw.C_CENHEATHUK11.as_matrix(), thdata_raw.OBS_VALUE.as_matrix()))).T
+                        np.repeat(thdata_raw.C_CENHEATHUK11.as_matrix(), thdata_raw.OBS_VALUE.as_matrix()))).T
     # randomise to eliminate bias w.r.t. occupants/rooms/bedrooms
     np.random.shuffle(thdata)
+
+    ethcar_raw = self.lc4202.loc[(self.lc4202.GEOGRAPHY_CODE == area) 
+                               & (self.lc4202.C_TENHUK11 == tenure)
+                               & (self.lc4202.OBS_VALUE != 0)]
+    #print(thdata_raw)
+    ethcar = np.vstack((np.repeat(ethcar_raw.C_ETHHUK11.as_matrix(), ethcar_raw.OBS_VALUE.as_matrix()),
+                        np.repeat(ethcar_raw.C_CARSNO.as_matrix(), ethcar_raw.OBS_VALUE.as_matrix()))).T
+    # randomise to eliminate bias w.r.t. occupants/rooms/bedrooms
+    np.random.shuffle(ethcar)
+
 
     econ_raw = self.lc4601.loc[(self.lc4601.GEOGRAPHY_CODE == area)
                                & (self.lc4601.C_TENHUK11 == tenure)
@@ -117,7 +126,6 @@ class Microsynthesis:
     if len(thdata) != len(econ):
       print("WARNING: econ mismatch in", area, len(thdata), len(econ))
 
-    #print(thdata.T)
 
     subindex = self.index
     # TODO vectorise
@@ -126,8 +134,9 @@ class Microsynthesis:
       self.dwellings.at[subindex, "CentralHeating"] = thdata[i][1]
       # workaround for fact that there are sometimes fewer entries for economic status
       self.dwellings.at[subindex, "EconStatus"] = econ[i % len(econ)]
+      self.dwellings.at[subindex, "Ethnicity"] = ethcar[i][0]
+      self.dwellings.at[subindex, "NumCars"] = ethcar[i][1]
       subindex += 1
-
 
   # 2. constrained usim of rooms and bedrooms
   def __step2(self, area, tenure, all_occupants):
@@ -221,6 +230,8 @@ class Microsynthesis:
         self.dwellings.at[self.index, "CentralHeating"] = 2 # assume all communal are centrally heated
         # use a lookup based on establishment type
         self.dwellings.at[self.index, "EconStatus"] = Utils.communal_economic_status(area_communal.at[area_communal.index[i], "CELL"])
+        self.dwellings.at[self.index, "Ethnicity"] = 5 # mixed/multiple
+        self.dwellings.at[self.index, "NumCars"] = 1 # no cars (blanket assumption)
         self.index += 1
 
   # unoccupied, should be one entry per area
@@ -263,6 +274,8 @@ class Microsynthesis:
         self.dwellings.at[self.index, "PPerBed"] = 1
         self.dwellings.at[self.index, "CentralHeating"] = ch_index[unocc_pop.at[j, "CentralHeating"]]
         self.dwellings.at[self.index, "EconStatus"] = self.UNKNOWN 
+        self.dwellings.at[self.index, "Ethnicity"] = self.UNKNOWN
+        self.dwellings.at[self.index, "NumCars"] = 1 # no cars (no people)
         self.index += 1
 
   # rooms and beds for unoccupied (sampled from occupied population in same area and same BuildType)

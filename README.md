@@ -29,7 +29,7 @@ pip3 install git+git://github.com/virgesmith/humanleague.git@1.0.1
 ```
 scripts/run_microsynth.py <region(s)> <resolution>
 ```
-where region can be a one or more local authorities (or England/EngWales) and resolution can be one of: LA, MSOA, LSOA, OA. If spaces in the former, enclose the argument in quotes, e.g.
+where region can be a one or more local authorities (or one of England, EnglandWales, GB, UK) and resolution can be one of: LA, MSOA, LSOA, OA. If there are spaces in the former, enclose the argument in quotes, e.g.
 ```
 scripts/run_microsynth.py "City of London" OA
 ```
@@ -41,30 +41,33 @@ This work also introduces and tests (successfully) a newly-developed extension t
 
 # Terminology
 
-We use the term `unoccupied' in this work to mean a dwelling that is not permanently occupied, or is unoccupied on the census date. 
+We use the term `unoccupied' in this work to mean a dwelling that is not permanently occupied, or is unoccupied, _on the census date_. This does not mean that the property is permanently unoccupied, but it does mean that there is essentially no data available for these properties. 
 
 |Category    |Values|  
 |------------|------|  
 |Geography   |(output area)|  
-|Tenure      |Owned, Mortgaged/shared, Rented social, Rented private, (Communal category)|   
-|Type        |Detached, Semi, Terrace, Flat/mobile, Communal|
+|Tenure      |Owned, Mortgaged/shared, Rented social, Rented private, (Communal category)|
+|BuildType   |Detached, Semi, Terrace, Flat/mobile, Communal|
 |Occupants   |1, 2, 3, 4+|
 |Rooms       |1, 2, 3, 4, 5, 6+|  
 |Bedrooms    |1, 2, 3, 4+|
-|CentHeat    |False, True| 
-|PPerBed     |\(\le{0.5}\), \((0.5,1]\), \((1,1.5]\), \(>1.5\)| 
+|CentHeat    |1 (no), 2(yes) | 
+|PPerBed     |<=0.5, (0.5,1], (1,1.5], >1.5| 
 |Composition |Single person, Married/civil partnership, Cohabiting couple, Single parent, Multi person, Unoccupied|
+|EconStatus  | ... |
+|Ethnicity   | ... |
+|NumCars     | None, One, Two or more|
 
 Since occupants, rooms and bedrooms are capped (with the final value representing an `...or more' category, there is some imprecision in the microsynthesis:
 
 - the count of population in households is lower than the true population estimate.}
-- the value of persons per bedroom (`PPerBed' above) does not quite match the census data, due to the imprecision inherent in the 4+ categories. This makes it difficult to use it as a link variable between household composition and rooms/bedrooms.\footnote{This mismatch could potentially be used to refine estimates of persons and bedrooms in properties, but is out of scope for the moment.}}
+- the value of persons per bedroom (`PPerBed' above) does not quite match the census data, due to the imprecision inherent in the 4+ categories. This makes it difficult to use it as a link variable between household composition and rooms/bedrooms. (This mismatch could potentially be used to refine estimates of persons and bedrooms in properties, but is out of scope for the moment.)
 
 # Input Data
 
-The only user input to the model is the geographical area under consideration, e.g. in theory `Newcastle upon Tyne'. In practice the current implementation cannot successfully query nomisweb for it's internal geographical codes at OA level. For Newcastle (and Bradford) these codes are provided in the source code. (See e.g. MSIM2.R line 23 and Geography.R.)
+The only user inputs required to run the model is the geographical area under consideration, e.g. `Newcastle upon Tyne' and the required geographical resolution, e.g. `LSOA'. 
 
-The required 2011 Census tables are automatically downloaded from nomisweb.co.uk via their API. (End users should ensure they have an account and an API key, otherwise data downloads may be incomplete.)  Since the data is essentially static, downloads are cached\footnote{Stored by the hash of the API query.}, and subsequent runs on the same geographical area will use the cached data (if available).
+The required 2011 Census tables are automatically downloaded using the [https://github.com/virgesmith/UKCensusAPI](UKCensusAPI) package from nomisweb.co.uk. (End users should ensure they have an account and an API key, otherwise data downloads may be incomplete.)  Since the data is essentially static, downloads are cached for efficiency.
 
 |Table     |Description|
 |----------|-----------|
@@ -76,14 +79,17 @@ The required 2011 Census tables are automatically downloaded from nomisweb.co.uk
 |`KS401EW` | Dwellings, household spaces and accommodation type|         
 |`QS420EW` | Communal establishment management and type - Communal establishments|         
 |`QS421EW` | Communal establishment management and type - People|
+|`LC4601EW`| Tenure by economic activity by age - Household Reference Persons |
+|`LC4202EW`| Tenure by car or van availability by ethnic group of Household Reference Person (HRP) |
 
 Note the following limitations in the input data:
 
-- No census table is known that links rooms directly to bedrooms.}
-- No census data is available that indicated the type or tenure (or size) of unoccupied dwellings.}
-- No census data is available that indicated the tenure, occupants or size of communal residences.}
+- No census table is known that links rooms directly to bedrooms.
+- No census data is available that indicate any characteristics of unoccupied dwellings.
+- For communal residencesthe only available data is a count of the number of residences of a particular type within the area, and the total number of people in that type of residence in that area.
+- There are small discrepancies in the counts in the LC4601EW table, occasionally showing one fewer entry in an area.
 
-The Methodology section explains how these limitations are overcome.
+The Methodology section explains how these limitations are dealt with.
 
 # Output Data
 
@@ -133,42 +139,64 @@ Since no tenure information is forthcoming for communal residences, the Tenure a
 
 |Category | Text | Value |
 |---------|------|-------| 
+|BuildType          | Detached | 2 
+|                   | Semi | 3  
+|                   | Terrace  | 4   
+|                   | Flat/mobile | 5    
+|                   | Communal | 6   
 |Tenure             | Owned | 2 
 |                   | Mortgaged/shared | 3  
 |                   | Rented social  | 5   
 |                   | Rented private | 6   
 |(Communal)         | Medical and care establishment: NHS | 102   
-|				 | Medical and care establishment: Local Authority | 106 
-|				 | Medical and care establishment: Registered Social Landlord/Housing Association | 111 
-|				 | Medical and care establishment: Other | 114 
-|				 | Other establishment: Defence | 122 
-|				 | Other establishment: Prison service | 123 
-|			     | Other establishment: Approved premises (probation/bail hostel) | 124 
-|			     | Other establishment: Detention centres and other detention | 125 
-|			     | Other establishment: Education | 126 
-|			     | Other establishment: Hotel: guest house; B\|B; youth hostel | 127 
-|			     | Other establishment: Hostel or temporary shelter for the homeless | 128 
-|			     | Other establishment: Holiday accommodation (for example holiday parks) | 129 
-|			     | Other establishment: Other travel or temporary accommodation | 130 
-|			     | Other establishment: Religious | 131 
-|			     | Other establishment: Staff/worker accommodation only | 132 
-|			     | Other establishment: Other | 133 
-|			     | Establishment not stated  | 134   
-|Type               | Detached | 2 
-|                   | Semi | 3  
-|                   | Terrace  | 4   
-|                   | Flat/mobile | 5    
-|                   | Communal | 6   
-|PPerBed            | \(\le{0.5}\) | 1 
-|                   | \((0.5,1]\)| 2  
-|                   | \((1,1.5]\) | 3   
-|                   | \(>1.5\) | 4   
+|                   | Medical and care establishment: Local Authority | 106 
+|                   | Medical and care establishment: Registered Social Landlord/Housing Association | 111 
+|                   | Medical and care establishment: Other | 114 
+|                   | Other establishment: Defence | 122 
+|                   | Other establishment: Prison service | 123 
+|                   | Other establishment: Approved premises (probation/bail hostel) | 124 
+|                   | Other establishment: Detention centres and other detention | 125 
+|                   | Other establishment: Education | 126 
+|                   | Other establishment: Hotel: guest house; B\|B; youth hostel | 127 
+|                   | Other establishment: Hostel or temporary shelter for the homeless | 128 
+|                   | Other establishment: Holiday accommodation (for example holiday parks) | 129 
+|                   | Other establishment: Other travel or temporary accommodation | 130 
+|                   | Other establishment: Religious | 131 
+|                   | Other establishment: Staff/worker accommodation only | 132 
+|                   | Other establishment: Other | 133 
+|                   | Establishment not stated  | 134   
+|PPerBed            | <=0.5   | 1 
+|                   | (0.5,1] | 2  
+|                   | (1,1.5] | 3   
+|                   | >1.5    | 4   
 |Composition        | Single person | 1 
 |                   | Married/civil partnership | 2  
 |                   | Cohabiting couple | 3   
 |                   | Single parent | 4    
 |                   | Multi person | 5    
 |                   | Unoccupied | 6   
+|Economic Status    | Economically active: In employment: Employee: Part-time | 4
+|                   | Economically active: In employment: Employee: Full-time | 5
+|                   | Economically active: In employment: Self-employed: Part-time | 7
+|                   | Economically active: In employment: Self-employed: Full-time | 8
+|                   | Economically active: In employment: Full-time students | 9
+|                   | Economically active: Unemployed: Unemployed (excluding full-time students) | 11
+|                   | Economically active: Unemployed: Full-time students | 12
+|                   | Economically inactive: Retired | 14
+|                   | Economically inactive: Student (including full-time students) | 15
+|                   | Economically inactive: Looking after home or family | 16
+|                   | Economically inactive: Long-term sick or disabled | 17
+|                   | Economically inactive: Other | 18
+| Ethnicity         | White: English/Welsh/Scottish/Northern Irish/British | 2
+|                   | White: Irish | 3
+|                   | White: Other White | 4
+|                   | Mixed/multiple ethnic group | 5
+|                   | Asian/Asian British | 6
+|                   | Black/African/Caribbean/Black British | 7
+|                   | Other ethnic group | 8
+| NumCars           | No cars in household | 1
+|                   | One car in household | 2
+|                   | Two or more cars in household | 3
 
 # Microsynthesis methodology
 
