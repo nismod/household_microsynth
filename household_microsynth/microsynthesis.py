@@ -6,18 +6,22 @@ import ukcensusapi.Nomisweb as Api
 import humanleague
 import household_microsynth.utils as Utils
 
-
-# TODO come up with a class structure
-
 class Microsynthesis:
 
-  ## TODO perhaps this belongs in UKCensusAPI
+  # TODO perhaps this belongs in UKCensusAPI
   # static map of area types to nomis codes
-  Area = {
+  SmallArea = {
     "LA": Api.Nomisweb.LAD,
     "MSOA": Api.Nomisweb.MSOA,
     "LSOA": Api.Nomisweb.LSOA,
     "OA": Api.Nomisweb.OA
+  }
+
+  WideArea = {
+    "England": Api.Nomisweb.England,
+    "EnglandWales": Api.Nomisweb.EnglandWales,
+    "GB": Api.Nomisweb.GB,
+    "UK": Api.Nomisweb.UK
   }
 
   # initialise, supplying geographical area and resolution , plus (optionally) a location to cache downloads
@@ -35,10 +39,10 @@ class Microsynthesis:
 
     self.region = region
     # convert input string to enum
-    self.resolution = Microsynthesis.Area[resolution]
+    self.resolution = resolution
 
     # (down)load the census tables
-    self.__get_census_data(self.region, self.resolution)
+    self.__get_census_data()
 
     # initialise table and index
     categories = ["Area", "BuildType", "Tenure", "Composition", "Occupants", "Rooms", "Bedrooms", "PPerBed", "CentralHeating"]
@@ -262,10 +266,18 @@ class Microsynthesis:
 
   # Retrieves census tables for the specified geography
   # checks for locally cached data or calls nomisweb API
-  def __get_census_data(self, region, resolution):
-    region_codes = self.api.get_lad_codes(region)
-    if not len(region_codes):
-      raise ValueError("no regions match the input: \"" + region + "\"")
+  def __get_census_data(self):
+
+    # convert input string to enum
+    resolution = Microsynthesis.SmallArea[self.resolution]
+
+    if self.region in Microsynthesis.WideArea.keys():
+      region_codes = Microsynthesis.WideArea[self.region]
+    else:
+      region_codes = self.api.get_lad_codes(self.region)
+      if not len(region_codes):
+        raise ValueError("no regions match the input: \"" + region + "\"")
+
     area_codes = self.api.get_geo_codes(region_codes, resolution)
 
     # assignment does shallow copy, need to use .copy() to avoid this getting query_params fields
