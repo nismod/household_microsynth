@@ -14,10 +14,65 @@ def people_per_bedroom(people, bedrooms):
     return 3 # (1, 1.5]
   return 4 # >1.5
 
+# make assumption on economic status of residents of different types of communal residence
+def communal_economic_status(communal_type):
+
+  # "2": "Medical and care establishment: NHS: Total",
+  # "6": "Medical and care establishment: Local Authority: Total",
+  # "11": "Medical and care establishment: Registered Social Landlord/Housing Association: Total",
+  # "14": "Medical and care establishment: Other: Total",
+  # "22": "Other establishment: Defence",
+  # "23": "Other establishment: Prison service",
+  # "24": "Other establishment: Approved premises (probation/bail hostel)",
+  # "25": "Other establishment: Detention centres and other detention",
+  # "26": "Other establishment: Education",
+  # "27": "Other establishment: Hotel: guest house; B&B; youth hostel",
+  # "28": "Other establishment: Hostel or temporary shelter for the homeless",
+  # "29": "Other establishment: Holiday accommodation (for example holiday parks)",
+  # "30": "Other establishment: Other travel or temporary accommodation",
+  # "31": "Other establishment: Religious",
+  # "32": "Other establishment: Staff/worker accommodation only",
+  # "33": "Other establishment: Other",
+  # "34": "Establishment not stated"
+
+  # "4": "Economically active: In employment: Employee: Part-time",
+  # "5": "Economically active: In employment: Employee: Full-time",
+  # "7": "Economically active: In employment: Self-employed: Part-time",
+  # "8": "Economically active: In employment: Self-employed: Full-time",
+  # "9": "Economically active: In employment: Full-time students",
+  # "11": "Economically active: Unemployed: Unemployed (excluding full-time students)",
+  # "12": "Economically active: Unemployed: Full-time students",
+  # "14": "Economically inactive: Retired",
+  # "15": "Economically inactive: Student (including full-time students)",
+  # "16": "Economically inactive: Looking after home or family",
+  # "17": "Economically inactive: Long-term sick or disabled",
+  # "18": "Economically inactive: Other"
+
+  communal_econ_map = { 
+    2: -1,
+    6: -1,
+    11: -1,
+    14: -1,
+    22: 5,
+    23: 18,
+    24: 18,
+    25: 18,
+    26: 9, # or 12?
+    27: -1,
+    28: 11,
+    29: -1,
+    30: -1,
+    31: 18,
+    32: 5,
+    33: -1,
+    34: -1
+  }
+  return communal_econ_map[communal_type]
+
 def check(msynth, total_occ_dwellings, total_households, total_communal):
   # correct number of dwellings
   assert len(msynth.dwellings) == msynth.total_dwellings
-  # no missing/NaN values
+  # check no missing/NaN values
   assert not pd.isnull(msynth.dwellings).values.any()
 
   # category values are within those expected

@@ -24,6 +24,9 @@ class Microsynthesis:
     "UK": Api.Nomisweb.UK
   }
 
+  # Placeholder for unknown or non-applicable category values
+  UNKNOWN = -1
+
   # initialise, supplying geographical area and resolution , plus (optionally) a location to cache downloads
   def __init__(self, region, resolution, cache_dir = "./cache"):
     self.api = Api.Nomisweb(cache_dir)
@@ -45,7 +48,8 @@ class Microsynthesis:
     self.__get_census_data()
 
     # initialise table and index
-    categories = ["Area", "BuildType", "Tenure", "Composition", "Occupants", "Rooms", "Bedrooms", "PPerBed", "CentralHeating"]
+    categories = ["Area", "BuildType", "Tenure", "Composition", "Occupants", "Rooms", "Bedrooms", "PPerBed", "CentralHeating", "EconStatus"]
+    #, "Ethnicity", "NumCars"]
     self.total_dwellings = sum(self.ks401.OBS_VALUE) + sum(self.communal.OBS_VALUE)
     self.dwellings = pd.DataFrame(index=range(0, self.total_dwellings), columns=categories)
     self.index = 0
@@ -103,6 +107,16 @@ class Microsynthesis:
               np.repeat(thdata_raw.C_CENHEATHUK11.as_matrix(), thdata_raw.OBS_VALUE.as_matrix()))).T
     # randomise to eliminate bias w.r.t. occupants/rooms/bedrooms
     np.random.shuffle(thdata)
+
+    econ_raw = self.lc4601.loc[(self.lc4601.GEOGRAPHY_CODE == area)
+                               & (self.lc4601.C_TENHUK11 == tenure)
+                               & (self.lc4601.OBS_VALUE != 0)]
+    econ = np.repeat(econ_raw.C_ECOPUK11.as_matrix(), econ_raw.OBS_VALUE.as_matrix())
+    np.random.shuffle(econ)
+
+    if len(thdata) != len(econ):
+      print("WARNING: econ mismatch in", area, len(thdata), len(econ))
+
     #print(thdata.T)
 
     subindex = self.index
@@ -110,6 +124,8 @@ class Microsynthesis:
     for i in range(0, len(thdata)):
       self.dwellings.at[subindex, "BuildType"] = thdata[i][0]
       self.dwellings.at[subindex, "CentralHeating"] = thdata[i][1]
+      # workaround for fact that there are sometimes fewer entries for economic status
+      self.dwellings.at[subindex, "EconStatus"] = econ[i % len(econ)]
       subindex += 1
 
 
@@ -203,6 +219,8 @@ class Microsynthesis:
         self.dwellings.at[self.index, "Composition"] = 5
         self.dwellings.at[self.index, "PPerBed"] = 2
         self.dwellings.at[self.index, "CentralHeating"] = 2 # assume all communal are centrally heated
+        # use a lookup based on establishment type
+        self.dwellings.at[self.index, "EconStatus"] = Utils.communal_economic_status(area_communal.at[area_communal.index[i], "CELL"])
         self.index += 1
 
   # unoccupied, should be one entry per area
@@ -244,6 +262,7 @@ class Microsynthesis:
         self.dwellings.at[self.index, "Composition"] = 6
         self.dwellings.at[self.index, "PPerBed"] = 1
         self.dwellings.at[self.index, "CentralHeating"] = ch_index[unocc_pop.at[j, "CentralHeating"]]
+        self.dwellings.at[self.index, "EconStatus"] = self.UNKNOWN 
         self.index += 1
 
   # rooms and beds for unoccupied (sampled from occupied population in same area and same BuildType)

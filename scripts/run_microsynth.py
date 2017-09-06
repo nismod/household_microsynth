@@ -39,16 +39,15 @@ def main(region, resolution):
 
   print("Microsynthesis region: ", region)
   print("Microsynthesis resolution: ", resolution)
-  msynth = Microsynthesiser.Microsynthesis(region, resolution, CACHE_DIR)
   # init microsynthesis
-  # try:
-  #   msynth = Microsynthesiser.Microsynthesis(region, resolution, CACHE_DIR)
-  # except ValueError as e:
-  #   print(e)
-  #   return
-  # except:
-  #   print("Unknown exception")
-  #   return
+  try:
+    msynth = Microsynthesiser.Microsynthesis(region, resolution, CACHE_DIR)
+  except ValueError as e:
+    print(e)
+    return
+  except:
+    print("Unknown exception")
+    return
 
   # Do some basic checks on totals
   total_occ_dwellings = sum(msynth.lc4402.OBS_VALUE)
