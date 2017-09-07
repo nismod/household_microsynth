@@ -387,8 +387,7 @@ class Microsynthesis:
     table = "NM_899_1"
     query_params = common_params.copy()
     query_params["C_TENHUK11"] = "2,3,5,6"
-    #query_params["C_ECOPUK11"] = "4,5,7,8,9,11,12,14...18"
-    query_params["C_ECOPUK11"] = "0" # even this is sometimes 1 fewer obs than other tables
+    query_params["C_ECOPUK11"] = "4,5,7,8,9,11,12,14...18"
     query_params["C_AGE"] = "0"
     query_params["select"] = "GEOGRAPHY_CODE,C_TENHUK11,C_ECOPUK11,OBS_VALUE"
     # TODO query_params["geography"] = ...
