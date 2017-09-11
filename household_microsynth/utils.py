@@ -75,70 +75,59 @@ def check(msynth, total_occ_dwellings, total_households, total_communal):
   # check no missing/NaN values
   assert not pd.isnull(msynth.dwellings).values.any()
 
-  # category values are within those expected
-  assert np.array_equal(sorted(msynth.dwellings.LC4402_C_TYPACCOM.unique()), msynth.type_index)
-  #assert np.array_equal(sorted(dwellings.LC4402_C_TENHUK11.unique()), tenure_index) communal residence type gets added
-  #print(sorted(dwellings.LC4402_C_TENHUK11.unique()))
-  assert np.array_equal(sorted(msynth.dwellings.LC4408_C_AHTHUK11.unique()), msynth.comp_index)
+  # category values are within those expected, including unknown/n/a where permitted 
+  assert np.array_equal(sorted(msynth.dwellings.LC4402_C_TYPACCOM.unique()), np.insert(msynth.type_index, 0, [msynth.NOTAPPLICABLE]))
+  assert np.array_equal(sorted(msynth.dwellings.LC4402_C_TENHUK11.unique()), np.insert(msynth.tenure_index, 0, [msynth.NOTAPPLICABLE])) 
+  assert np.array_equal(sorted(msynth.dwellings.LC4408_C_AHTHUK11.unique()), np.insert(msynth.comp_index, 0, [msynth.UNKNOWN]))
   assert np.array_equal(sorted(msynth.dwellings.LC4408EW_C_PPBROOMHEW11.unique()), msynth.ppb_index)
   assert np.array_equal(sorted(msynth.dwellings.LC4402_C_CENHEATHUK11.unique()), msynth.ch_index)
 
-  # occupied/unoccupied totals correct
-  assert len(msynth.dwellings[(msynth.dwellings.LC4408_C_AHTHUK11 != 6) & (msynth.dwellings.LC4402_C_TYPACCOM != 6)]) == total_occ_dwellings
-  assert len(msynth.dwellings[msynth.dwellings.LC4408_C_AHTHUK11 == 6]) == total_households - total_occ_dwellings
+  # occupied/unoccupied/communal totals correct
+  assert len(msynth.dwellings[(msynth.dwellings.QS420EW_CELL == msynth.NOTAPPLICABLE)
+                            & (msynth.dwellings.LC4404EW_C_SIZHUK11 != 0)]) == total_occ_dwellings
+  assert len(msynth.dwellings[(msynth.dwellings.QS420EW_CELL == msynth.NOTAPPLICABLE)
+                            & (msynth.dwellings.LC4404EW_C_SIZHUK11 == 0)]) == total_households - total_occ_dwellings
+  assert len(msynth.dwellings[msynth.dwellings.QS420EW_CELL != msynth.NOTAPPLICABLE]) == total_communal
 
-  # household/communal totals correct
-  assert len(msynth.dwellings[msynth.dwellings.LC4402_C_TYPACCOM != 6]) == total_households
-  assert len(msynth.dwellings[msynth.dwellings.LC4402_C_TYPACCOM == 6]) == total_communal
 
-  # Build (accomodation) type
-  print("Build type: Syn v Agg")
+  # Build (accomodation) type (occupied only)
   for i in msynth.type_index:
-    if i != 6:
-      assert len(msynth.dwellings[(msynth.dwellings.LC4402_C_TYPACCOM == i) 
-                               & (msynth.dwellings.LC4408_C_AHTHUK11 != 6)]) == sum(msynth.lc4402[msynth.lc4402.C_TYPACCOM == i].OBS_VALUE)
-    else:
-      assert len(msynth.dwellings[(msynth.dwellings.LC4402_C_TYPACCOM == i)
-                               & (msynth.dwellings.LC4408_C_AHTHUK11 != 6)]) == sum(msynth.communal.OBS_VALUE)
+    assert len(msynth.dwellings[(msynth.dwellings.LC4402_C_TYPACCOM == i)
+                              & (msynth.dwellings.LC4404EW_C_SIZHUK11 != 0)]) == sum(msynth.lc4402[msynth.lc4402.C_TYPACCOM == i].OBS_VALUE)
 
-  # Tenure
+  # Tenure (occupied only)
   for i in msynth.tenure_index:
     assert len(msynth.dwellings[(msynth.dwellings.LC4402_C_TENHUK11 == i)
-                              & (msynth.dwellings.LC4408_C_AHTHUK11 != 6)]) == sum(msynth.lc4402[msynth.lc4402.C_TENHUK11 == i].OBS_VALUE)
+                              & (msynth.dwellings.LC4404EW_C_SIZHUK11 != 0)]) == sum(msynth.lc4402[msynth.lc4402.C_TENHUK11 == i].OBS_VALUE)
 
-  # central heating (ignoring unoccupied)
-  print("CentHeat: Syn v Agg")
+  # central heating (ignoring unoccupied and communal)
   for i in msynth.ch_index:
     assert len(msynth.dwellings[(msynth.dwellings.LC4402_C_CENHEATHUK11 == i)
-                             & (msynth.dwellings.LC4408_C_AHTHUK11 != 6)
-                             & (msynth.dwellings.LC4402_C_TYPACCOM != 6)]) == sum(msynth.lc4402[msynth.lc4402.C_CENHEATHUK11 == i].OBS_VALUE)
+                              & (msynth.dwellings.LC4404EW_C_SIZHUK11 != 0)
+                              & (msynth.dwellings.QS420EW_CELL == msynth.NOTAPPLICABLE)]) == sum(msynth.lc4402[msynth.lc4402.C_CENHEATHUK11 == i].OBS_VALUE)
 
-  # composition
-  print("Comp: Syn v Agg")
+  # # composition
   for i in msynth.comp_index:
-    if i != 6:
-      assert len(msynth.dwellings[(msynth.dwellings.LC4408_C_AHTHUK11 == i)
-                               & (msynth.dwellings.LC4402_C_TYPACCOM != 6)]) == sum(msynth.lc4408[msynth.lc4408.C_AHTHUK11 == i].OBS_VALUE)
-    else:
-      assert len(msynth.dwellings[(msynth.dwellings.LC4408_C_AHTHUK11 == i)
-                               & (msynth.dwellings.LC4402_C_TYPACCOM != 6)]) == sum(msynth.ks401[msynth.ks401.CELL == 6].OBS_VALUE)
+    assert len(msynth.dwellings[(msynth.dwellings.LC4408_C_AHTHUK11 == i)
+                             & (msynth.dwellings.LC4404EW_C_SIZHUK11 != 0)
+                             & (msynth.dwellings.QS420EW_CELL == msynth.NOTAPPLICABLE)]),  sum(msynth.lc4408[msynth.lc4408.C_AHTHUK11 == i].OBS_VALUE)
 
   # Rooms (ignoring communal and unoccupied)
-  assert np.array_equal(sorted(msynth.dwellings[msynth.dwellings.LC4402_C_TYPACCOM != 6].LC4404EW_C_ROOMS.unique()), msynth.lc4404["C_ROOMS"].unique())
+  assert np.array_equal(sorted(msynth.dwellings[msynth.dwellings.LC4402_C_TYPACCOM != msynth.NOTAPPLICABLE].LC4404EW_C_ROOMS.unique()), msynth.lc4404["C_ROOMS"].unique())
   print("Rooms: Syn v Agg")
   for i in msynth.lc4404["C_ROOMS"].unique():
     assert len(msynth.dwellings[(msynth.dwellings.LC4404EW_C_ROOMS == i)
-                             & (msynth.dwellings.LC4408_C_AHTHUK11 != 6)
-                             & (msynth.dwellings.LC4402_C_TYPACCOM != 6)]) == sum(msynth.lc4404[msynth.lc4404.C_ROOMS == i].OBS_VALUE)
+                              & (msynth.dwellings.LC4404EW_C_SIZHUK11 != 0)
+                              & (msynth.dwellings.QS420EW_CELL == msynth.NOTAPPLICABLE)]) == sum(msynth.lc4404[msynth.lc4404.C_ROOMS == i].OBS_VALUE)
   print("Zero rooms: ", len(msynth.dwellings[msynth.dwellings.LC4404EW_C_ROOMS == 0]))
 
   # Bedrooms (ignoring communal and unoccupied)
-  assert np.array_equal(sorted(msynth.dwellings[msynth.dwellings.LC4402_C_TYPACCOM != 6].LC4405EW_C_BEDROOMS.unique()), msynth.lc4405["C_BEDROOMS"].unique())
+  assert np.array_equal(sorted(msynth.dwellings[msynth.dwellings.LC4402_C_TYPACCOM != msynth.NOTAPPLICABLE].LC4405EW_C_BEDROOMS.unique()), msynth.lc4405["C_BEDROOMS"].unique())
   print("Bedrooms: Syn v Agg")
   for i in msynth.lc4405["C_BEDROOMS"].unique():
     assert(len(msynth.dwellings[(msynth.dwellings.LC4405EW_C_BEDROOMS == i)
-                             & (msynth.dwellings.LC4408_C_AHTHUK11 != 6)
-                             & (msynth.dwellings.LC4402_C_TYPACCOM != 6)]) == sum(msynth.lc4405[msynth.lc4405.C_BEDROOMS == i].OBS_VALUE))
+                             & (msynth.dwellings.LC4404EW_C_SIZHUK11 != 0)
+                             & (msynth.dwellings.QS420EW_CELL == msynth.NOTAPPLICABLE)]) == sum(msynth.lc4405[msynth.lc4405.C_BEDROOMS == i].OBS_VALUE))
   print("Zero bedrooms: ", len(msynth.dwellings[msynth.dwellings.LC4405EW_C_BEDROOMS == 0]))
   print("OK")
 

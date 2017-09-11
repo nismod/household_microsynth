@@ -49,7 +49,7 @@ class Microsynthesis:
     self.__get_census_data()
 
     # initialise table and index
-    categories = ["Area", "LC4402_C_TYPACCOM", "LC4402_C_TENHUK11", "LC4408_C_AHTHUK11", "LC4404EW_C_SIZHUK11", "LC4404EW_C_ROOMS", "LC4405EW_C_BEDROOMS", 
+    categories = ["Area", "LC4402_C_TYPACCOM", "QS420EW_CELL", "LC4402_C_TENHUK11", "LC4408_C_AHTHUK11", "LC4404EW_C_SIZHUK11", "LC4404EW_C_ROOMS", "LC4405EW_C_BEDROOMS", 
                   "LC4408EW_C_PPBROOMHEW11", "LC4402_C_CENHEATHUK11", "LC4601EW_C_ECOPUK11", "LC4202EW_C_ETHHUK11", "LC4202EW_C_CARSNO"]
     self.total_dwellings = sum(self.ks401.OBS_VALUE) + sum(self.communal.OBS_VALUE)
     self.dwellings = pd.DataFrame(index=range(0, self.total_dwellings), columns=categories)
@@ -57,12 +57,10 @@ class Microsynthesis:
 
     # generate indices
     self.type_index = self.lc4402.C_TYPACCOM.unique()
-    self.type_index = np.append(self.type_index, 6) # this value denotes communal
     self.tenure_index = self.lc4402.C_TENHUK11.unique()
     self.ch_index = self.lc4402.C_CENHEATHUK11.unique()
     self.ppb_index = self.lc4408.C_PPBROOMHEW11.unique()
     self.comp_index = self.lc4408.C_AHTHUK11.unique()
-    self.comp_index = np.append(self.comp_index, 6) # this value denotes unoccupied
 
   # run the microsynthesis
   def run(self):
@@ -158,6 +156,8 @@ class Microsynthesis:
       for i in range(0, len(pop[0])):
         # TODO why does moving this to above break consistency checks?
         self.dwellings.at[self.index, "Area"] = area
+        # Household has no communal category
+        self.dwellings.at[self.index, "QS420EW_CELL"] = self.NOTAPPLICABLE
         self.dwellings.at[self.index, "LC4402_C_TENHUK11"] = tenure
         self.dwellings.at[self.index, "LC4404EW_C_SIZHUK11"] = occ
         self.dwellings.at[self.index, "LC4404EW_C_ROOMS"] = pop[0][i] + 1 # since "0" means 1 room
@@ -221,14 +221,15 @@ class Microsynthesis:
       # row indices are the original values from the entire table
       for j in range(0, establishments):
         self.dwellings.at[self.index, "Area"] = area
-        self.dwellings.at[self.index, "LC4402_C_TYPACCOM"] = 6
+        self.dwellings.at[self.index, "LC4402_C_TYPACCOM"] = self.NOTAPPLICABLE
         # TODO check j is correct index? (R code uses i)
-        self.dwellings.at[self.index, "LC4402_C_TENHUK11"] = 100 + area_communal.at[area_communal.index[i], "CELL"]
+        self.dwellings.at[self.index, "QS420EW_CELL"] = area_communal.at[area_communal.index[i], "CELL"]
+        self.dwellings.at[self.index, "LC4402_C_TENHUK11"] = self.NOTAPPLICABLE
         self.dwellings.at[self.index, "LC4404EW_C_SIZHUK11"] = occ_array[j]
         # TODO if zero occupants, how to set rooms/beds? mean value of establishment type in region? 
         self.dwellings.at[self.index, "LC4404EW_C_ROOMS"] = occ_array[j]
         self.dwellings.at[self.index, "LC4405EW_C_BEDROOMS"] = occ_array[j]
-        self.dwellings.at[self.index, "LC4408_C_AHTHUK11"] = 5
+        self.dwellings.at[self.index, "LC4408_C_AHTHUK11"] = 5 # communal implies multi-person household
         self.dwellings.at[self.index, "LC4408EW_C_PPBROOMHEW11"] = 2 # 1-1.5
         self.dwellings.at[self.index, "LC4402_C_CENHEATHUK11"] = 2 # assume all communal are centrally heated
         # use a lookup based on establishment type
@@ -268,12 +269,13 @@ class Microsynthesis:
       for j in range(0, n_unocc):
         self.dwellings.at[self.index, "Area"] = area
         self.dwellings.at[self.index, "LC4402_C_TYPACCOM"] = type_index[unocc_pop.at[j, "LC4402_C_TYPACCOM"]]
+        self.dwellings.at[self.index, "QS420EW_CELL"] = self.NOTAPPLICABLE
         self.dwellings.at[self.index, "LC4402_C_TENHUK11"] = tenure_index[unocc_pop.at[j, "LC4402_C_TENHUK11"]]
         self.dwellings.at[self.index, "LC4404EW_C_SIZHUK11"] = 0
 #        # Rooms/beds are done at the end (so we can sample dwellings)
         self.dwellings.at[self.index, "LC4404EW_C_ROOMS"] = 0
         self.dwellings.at[self.index, "LC4405EW_C_BEDROOMS"] = 0
-        self.dwellings.at[self.index, "LC4408_C_AHTHUK11"] = 6
+        self.dwellings.at[self.index, "LC4408_C_AHTHUK11"] = self.UNKNOWN
         self.dwellings.at[self.index, "LC4408EW_C_PPBROOMHEW11"] = 1
         self.dwellings.at[self.index, "LC4402_C_CENHEATHUK11"] = ch_index[unocc_pop.at[j, "LC4402_C_CENHEATHUK11"]]
         self.dwellings.at[self.index, "LC4601EW_C_ECOPUK11"] = self.UNKNOWN 
@@ -284,12 +286,12 @@ class Microsynthesis:
   # rooms and beds for unoccupied (sampled from occupied population in same area and same BuildType)
   # TODO this is highly suboptimal, subsetting the same thing over and over again
   def __add_unoccupied_detail(self):
-    unocc = self.dwellings.loc[self.dwellings.LC4408_C_AHTHUK11 == 6]
+    unocc = self.dwellings.loc[self.dwellings.LC4408_C_AHTHUK11 == self.UNKNOWN]
     for i in unocc.index: 
       # sample from all occupied dwellings of same build type in same area
       sample = self.dwellings.loc[(self.dwellings.Area == unocc.at[i, "Area"]) 
                           & (self.dwellings.LC4402_C_TYPACCOM == unocc.at[i,"LC4402_C_TYPACCOM"]) 
-                          & (self.dwellings.LC4408_C_AHTHUK11 != 6)].sample()
+                          & (self.dwellings.LC4408_C_AHTHUK11 != self.UNKNOWN)].sample()
       assert len(sample)
 
       r = sample.at[sample.index[0], "LC4404EW_C_ROOMS"]
