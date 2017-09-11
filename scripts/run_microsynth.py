@@ -27,7 +27,6 @@ CACHE_DIR = "./cache"
 # KS401EW - Dwellings, household spaces and accommodation type
 # QS420EW - Communal establishment management and type - Communal establishments
 # QS421EW - Communal establishment management and type - People
-# TODO
 # LC4202EW - Tenure by car or van availability by ethnic group of Household Reference Person (HRP)
 # LC4601EW - Tenure by economic activity by age - Household Reference Persons
 # TODO: differentiate between purpose-built and converted flats?
@@ -80,15 +79,16 @@ def main(region, resolution):
 
   print("Number of geographical areas: ", len(msynth.lc4402.GEOGRAPHY_CODE.unique()))
 
-  # generate the population
-  try:
-    msynth.run()
-  except ValueError as e:
-    print(e)
-    return
-  except:
-    print("Unknown exception")
-    return
+  # # generate the population
+  # try:
+  #   msynth.run()
+  # except ValueError as e:
+  #   print(e)
+  #   return
+  # except:
+  #   print("Unknown exception")
+  #   return
+  msynth.run()
 
   print("Done. Exec time(s): ", time.time() - start_time)
 
@@ -106,7 +106,7 @@ if __name__ == "__main__":
     print("usage:", sys.argv[0], "<region(s)> <resolution>")
     print("e.g:", sys.argv[0], "\"Newcastle upon Tyne\" OA")
     print("    ", sys.argv[0], "\"Leeds, Bradford\" MSOA")
-  else:  
+  else:
     REGION = sys.argv[1]
     RESOLUTION = sys.argv[2]
-    main(REGION, RESOLUTION) 
+    main(REGION, RESOLUTION)
