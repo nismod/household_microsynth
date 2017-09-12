@@ -3,7 +3,7 @@
 import numpy as np
 import pandas as pd
 
-# TODO make private static nonmember...
+
 def people_per_bedroom(people, bedrooms):
   ppbed = people / bedrooms
   if ppbed <= 0.5:
@@ -48,7 +48,7 @@ def communal_economic_status(communal_type):
   # "17": "Economically inactive: Long-term sick or disabled",
   # "18": "Economically inactive: Other"
 
-  communal_econ_map = { 
+  communal_econ_map = {
     2: -1,
     6: -1,
     11: -1,
@@ -75,9 +75,9 @@ def check(msynth, total_occ_dwellings, total_households, total_communal):
   # check no missing/NaN values
   assert not pd.isnull(msynth.dwellings).values.any()
 
-  # category values are within those expected, including unknown/n/a where permitted 
+  # category values are within those expected, including unknown/n/a where permitted
   assert np.array_equal(sorted(msynth.dwellings.LC4402_C_TYPACCOM.unique()), np.insert(msynth.type_index, 0, [msynth.NOTAPPLICABLE]))
-  assert np.array_equal(sorted(msynth.dwellings.LC4402_C_TENHUK11.unique()), np.insert(msynth.tenure_index, 0, [msynth.NOTAPPLICABLE])) 
+  assert np.array_equal(sorted(msynth.dwellings.LC4402_C_TENHUK11.unique()), np.insert(msynth.tenure_index, 0, [msynth.NOTAPPLICABLE]))
   assert np.array_equal(sorted(msynth.dwellings.LC4408_C_AHTHUK11.unique()), np.insert(msynth.comp_index, 0, [msynth.UNKNOWN]))
   assert np.array_equal(sorted(msynth.dwellings.LC4408EW_C_PPBROOMHEW11.unique()), msynth.ppb_index)
   assert np.array_equal(sorted(msynth.dwellings.LC4402_C_CENHEATHUK11.unique()), msynth.ch_index)
@@ -114,7 +114,6 @@ def check(msynth, total_occ_dwellings, total_households, total_communal):
 
   # Rooms (ignoring communal and unoccupied)
   assert np.array_equal(sorted(msynth.dwellings[msynth.dwellings.LC4402_C_TYPACCOM != msynth.NOTAPPLICABLE].LC4404EW_C_ROOMS.unique()), msynth.lc4404["C_ROOMS"].unique())
-  print("Rooms: Syn v Agg")
   for i in msynth.lc4404["C_ROOMS"].unique():
     assert len(msynth.dwellings[(msynth.dwellings.LC4404EW_C_ROOMS == i)
                               & (msynth.dwellings.LC4404EW_C_SIZHUK11 != 0)
@@ -123,11 +122,33 @@ def check(msynth, total_occ_dwellings, total_households, total_communal):
 
   # Bedrooms (ignoring communal and unoccupied)
   assert np.array_equal(sorted(msynth.dwellings[msynth.dwellings.LC4402_C_TYPACCOM != msynth.NOTAPPLICABLE].LC4405EW_C_BEDROOMS.unique()), msynth.lc4405["C_BEDROOMS"].unique())
-  print("Bedrooms: Syn v Agg")
   for i in msynth.lc4405["C_BEDROOMS"].unique():
-    assert(len(msynth.dwellings[(msynth.dwellings.LC4405EW_C_BEDROOMS == i)
+    assert len(msynth.dwellings[(msynth.dwellings.LC4405EW_C_BEDROOMS == i)
                              & (msynth.dwellings.LC4404EW_C_SIZHUK11 != 0)
-                             & (msynth.dwellings.QS420EW_CELL == msynth.NOTAPPLICABLE)]) == sum(msynth.lc4405[msynth.lc4405.C_BEDROOMS == i].OBS_VALUE))
+                             & (msynth.dwellings.QS420EW_CELL == msynth.NOTAPPLICABLE)]) == sum(msynth.lc4405[msynth.lc4405.C_BEDROOMS == i].OBS_VALUE)
   print("Zero bedrooms: ", len(msynth.dwellings[msynth.dwellings.LC4405EW_C_BEDROOMS == 0]))
+
+  # Economic status (might be small diffs) (ignoring communal and unoccupied)
+  assert np.array_equal(sorted(msynth.dwellings[msynth.dwellings.LC4601EW_C_ECOPUK11 != msynth.UNKNOWN].LC4601EW_C_ECOPUK11.unique()), msynth.lc4601["C_ECOPUK11"].unique())
+  for i in msynth.lc4601["C_ECOPUK11"].unique():
+    assert abs(len(msynth.dwellings[(msynth.dwellings.LC4601EW_C_ECOPUK11 == i)
+                             & (msynth.dwellings.LC4404EW_C_SIZHUK11 != 0)
+                             & (msynth.dwellings.QS420EW_CELL == msynth.NOTAPPLICABLE)]) - sum(msynth.lc4601[msynth.lc4601["C_ECOPUK11"] == i].OBS_VALUE)) < 2
+
+  # Ethnicity (ignoring communal and unoccupied)
+  assert np.array_equal(sorted(msynth.dwellings[msynth.dwellings.LC4202EW_C_ETHHUK11 != msynth.UNKNOWN].LC4202EW_C_ETHHUK11.unique()), msynth.lc4202["C_ETHHUK11"].unique())
+  for i in msynth.lc4202["C_ETHHUK11"].unique():
+    assert len(msynth.dwellings[(msynth.dwellings.LC4202EW_C_ETHHUK11 == i)
+                             & (msynth.dwellings.LC4404EW_C_SIZHUK11 != 0)
+                             & (msynth.dwellings.QS420EW_CELL == msynth.NOTAPPLICABLE)]) == sum(msynth.lc4202[msynth.lc4202["C_ETHHUK11"] == i].OBS_VALUE)
+
+ # Cars (ignoring communal and unoccupied)
+  assert np.array_equal(sorted(msynth.dwellings[msynth.dwellings.LC4202EW_C_CARSNO != msynth.UNKNOWN].LC4202EW_C_CARSNO.unique()), msynth.lc4202["C_CARSNO"].unique())
+  for i in msynth.lc4202["C_CARSNO"].unique():
+    assert len(msynth.dwellings[(msynth.dwellings.LC4202EW_C_CARSNO == i)
+                             & (msynth.dwellings.LC4404EW_C_SIZHUK11 != 0)
+                             & (msynth.dwellings.QS420EW_CELL == msynth.NOTAPPLICABLE)]) == sum(msynth.lc4202[msynth.lc4202["C_CARSNO"] == i].OBS_VALUE)
+
   print("OK")
+
 

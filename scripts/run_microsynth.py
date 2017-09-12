@@ -68,7 +68,6 @@ def main(region, resolution):
   print("Occupied households: ", total_occ_dwellings)
   print("Unoccupied dwellings: ", total_households - total_occ_dwellings)
   print("Communal residences: ", total_communal)
-  print("Dwellings: ", total_dwellings)
 
   print("Total dwellings: ", total_dwellings)
   print("Total population: ", total_population)

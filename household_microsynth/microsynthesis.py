@@ -49,7 +49,7 @@ class Microsynthesis:
     self.__get_census_data()
 
     # initialise table and index
-    categories = ["Area", "LC4402_C_TYPACCOM", "QS420EW_CELL", "LC4402_C_TENHUK11", "LC4408_C_AHTHUK11", "LC4404EW_C_SIZHUK11", "LC4404EW_C_ROOMS", "LC4405EW_C_BEDROOMS", 
+    categories = ["Area", "LC4402_C_TYPACCOM", "QS420EW_CELL", "LC4402_C_TENHUK11", "LC4408_C_AHTHUK11", "LC4404EW_C_SIZHUK11", "LC4404EW_C_ROOMS", "LC4405EW_C_BEDROOMS",
                   "LC4408EW_C_PPBROOMHEW11", "LC4402_C_CENHEATHUK11", "LC4601EW_C_ECOPUK11", "LC4202EW_C_ETHHUK11", "LC4202EW_C_CARSNO"]
     self.total_dwellings = sum(self.ks401.OBS_VALUE) + sum(self.communal.OBS_VALUE)
     self.dwellings = pd.DataFrame(index=range(0, self.total_dwellings), columns=categories)
@@ -87,7 +87,7 @@ class Microsynthesis:
       self.__add_communal(area)
 
       # add unoccupied properties
-      self.__add_unoccupied(area, self.type_index, self.tenure_index, self.ch_index)
+      self.__add_unoccupied(area)
 
       # end area loop
 
@@ -240,7 +240,7 @@ class Microsynthesis:
 
   # unoccupied, should be one entry per area
   # microsynthesise the occupied houses by BuildType, Tenure, CentralHeating and sample the unoccupied from this dwellings
-  def __add_unoccupied(self, area, type_index, tenure_index, ch_index):
+  def __add_unoccupied(self, area):
     unocc = self.ks401.loc[(self.ks401.GEOGRAPHY_CODE == area) & (self.ks401.CELL == 6)]
     assert len(unocc == 1)
     n_unocc = unocc.at[unocc.index[0], "OBS_VALUE"]
@@ -268,16 +268,16 @@ class Microsynthesis:
 
       for j in range(0, n_unocc):
         self.dwellings.at[self.index, "Area"] = area
-        self.dwellings.at[self.index, "LC4402_C_TYPACCOM"] = type_index[unocc_pop.at[j, "LC4402_C_TYPACCOM"]]
+        self.dwellings.at[self.index, "LC4402_C_TYPACCOM"] = self.type_index[unocc_pop.at[j, "LC4402_C_TYPACCOM"]]
         self.dwellings.at[self.index, "QS420EW_CELL"] = self.NOTAPPLICABLE
-        self.dwellings.at[self.index, "LC4402_C_TENHUK11"] = tenure_index[unocc_pop.at[j, "LC4402_C_TENHUK11"]]
+        self.dwellings.at[self.index, "LC4402_C_TENHUK11"] = self.tenure_index[unocc_pop.at[j, "LC4402_C_TENHUK11"]]
         self.dwellings.at[self.index, "LC4404EW_C_SIZHUK11"] = 0
 #        # Rooms/beds are done at the end (so we can sample dwellings)
         self.dwellings.at[self.index, "LC4404EW_C_ROOMS"] = 0
         self.dwellings.at[self.index, "LC4405EW_C_BEDROOMS"] = 0
         self.dwellings.at[self.index, "LC4408_C_AHTHUK11"] = self.UNKNOWN
         self.dwellings.at[self.index, "LC4408EW_C_PPBROOMHEW11"] = 1
-        self.dwellings.at[self.index, "LC4402_C_CENHEATHUK11"] = ch_index[unocc_pop.at[j, "LC4402_C_CENHEATHUK11"]]
+        self.dwellings.at[self.index, "LC4402_C_CENHEATHUK11"] = self.ch_index[unocc_pop.at[j, "LC4402_C_CENHEATHUK11"]]
         self.dwellings.at[self.index, "LC4601EW_C_ECOPUK11"] = self.UNKNOWN 
         self.dwellings.at[self.index, "LC4202EW_C_ETHHUK11"] = self.UNKNOWN
         self.dwellings.at[self.index, "LC4202EW_C_CARSNO"] = 1 # no cars (no people)

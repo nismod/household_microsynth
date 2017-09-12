@@ -6,3 +6,4 @@ cache/
 .eggs/
 *.tsv
 
+synHouseholds.csv
