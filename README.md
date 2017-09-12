@@ -2,6 +2,12 @@
 
 A python package for microsynthesising household poulations from census data, including communal and unoccupied residences.
 
+# Introduction
+
+This document outlines the methodology and software implementation of a scalable small area microsynthesis of dwellings in a given region. It uses a microsynthesis technique developed by the author (publication in press) that uses quasirandom sampling to directly generate non-fractional populations very efficently.
+
+This also introduces and tests (successfully) a newly-developed extension to the microsynthesis technique that can deal with extra constraints (in this case the fact that a household cannot have more bedrooms than rooms).
+
 ## Installation
 
 ### Dependencies
@@ -34,21 +40,18 @@ where region can be a one or more local authorities (or one of England, EnglandW
 ```
 scripts/run_microsynth.py "City of London" OA
 ```
-# Introduction
-
-This document outlines the methodology and software implementation of a scalable small area microsynthesis of dwellings in a given region. It uses a microsynthesis technique developed by the author (publication in press) that uses quasirandom sampling to directly generate non-fractional populations very efficently.
-
-This also introduces and tests (successfully) a newly-developed extension to the microsynthesis technique that can deal with extra constraints (in this case the fact that a household cannot have more bedrooms than rooms).
 
 # Overview
 
-The microsynthesis combines census data on occupied households, communal residences, and unoccupied dwellings to generate a synthetic population of dwellings classified in a number of categories.
+The microsynthesis combines census data on occupied households, communal residences, and unoccupied dwellings to generate a synthetic population of dwellings classified in a number of categories, shown in the table below.
 
 It can be used to generate a realistic synthetic population of dwellings in a region at a specified geopgraphical resolution. Regions can be one or more local authorities or countrywide, and the geographical resolutions supported are: local authority, MSOA, LSOA or OA. The synthetic population is consistent with the census aggregates within the specified geographical resolution.
 
-The term 'unoccupied' in this context means a dwelling that is not permanently occupied, or is unoccupied, _on the census date_. This of course does not mean that the property is permanently unoccupied, and could actually mean that the occupants did not return the census form. It does mean that there is essentially no data available for these properties, other than their existence.
+The term 'unoccupied' in this context means a dwelling that is not permanently occupied, or is unoccupied, _on the census date_. This of course does not mean that the property is permanently unoccupied, and could actually mean that the occupants did not return the census form. The census tells us only that these properties exist.
 
-|Category      |Column Name             |Description
+Category values for a dwelling may be unknown or unapplicable in the synthesised data. This is simply because some columns are specific to a particular dwelling type (e.g. QS420EW_CELL for communal residences) or information is just unavailable (as is often the case for unoccupied dwellings. These values are indicated as negative numbers in the output, where -1 indicates unknown and -2 non-applicable.
+
+|Category      |Table/Column Name       |Description
 |--------------|------------------------|-----------
 |Geography     |Area                    |ONS code for geographical area (e.g. E00000001)  
 |Build Type    |LC4402_C_TYPACCOM       |Type of dwelling e.g. semi-detached
@@ -64,14 +67,9 @@ The term 'unoccupied' in this context means a dwelling that is not permanently o
 |Ethnicity     |LC4202EW_C_ETHHUK11     |Ethnicity of household reference person, e.g. Asian
 |NumCars       |LC4202EW_C_CARSNO       |Number of cars used by household (capped at 2)
 
-Since occupants, rooms and bedrooms are capped (with the final value representing an '...or more' category, there is some imprecision in the microsynthesis:
-
-- the count of population in households is lower than the true population estimate.}
-- the value of persons per bedroom (`PPerBed' above) does not quite match the census data, due to the imprecision inherent in the 4+ categories. This makes it difficult to use it as a link variable between household composition and rooms/bedrooms. (This mismatch could potentially be used to refine estimates of persons and bedrooms in properties, but is out of scope for the moment.)
-
 # Input Data
 
-The only user inputs required to run the model is the geographical area under consideration, e.g. 'Newcastle upon Tyne' and the required geographical resolution, e.g. 'LSOA'. 
+The only user inputs required to run the model is the geographical area under consideration, e.g. 'Newcastle upon Tyne' and the required geographical resolution, e.g. 'LSOA'. Multiple local authrities can be specified using a comma to separate the names.
 
 Downloading and cacheing of Census data and metadata from nomisweb.co.uk is handled by the UKCensusAPI package. See [https://github.com/virgesmith/UKCensusAPI](UKCensusAPI) for further details. 
 
@@ -94,9 +92,7 @@ __It is important that users ensure they have an account with nomisweb.co.uk and
 
 ## Overview
 
-The microsynthesis methodology can be split into three distinct parts: occupied households, communal residences, and unoccupied dwellings. The assumptions and data limitations differ for each of these and consequently the approach does too. 
-
-TODO UNKNOWN/NOTAPPLICABLE... the table now explicitly contains UNKNOWN (-1) values (e.g. for ethnicity of unoccupied household) and NOTAPPLICABLE (-2) (e.g. communal residence type for a ‘normal’ household), but should never contain empty values for any category.
+The microsynthesis methodology can be split into three distinct parts: occupied households, communal residences, and unoccupied dwellings. The assumptions and data limitations differ for each of these and consequently the approach does too. See below for more detail.
 
 ## Limitations of the input data
 
@@ -104,54 +100,78 @@ TODO UNKNOWN/NOTAPPLICABLE... the table now explicitly contains UNKNOWN (-1) val
 - Data is from the 2011 census and assumed to be accurate at the time, but it is already over 6 years old.
 
 ### Occupied Households
-- No census table is known that links rooms directly to bedrooms.
-- There are small discrepancies in the counts in the LC4601EW (economic status) table, which occasionally has one fewer entry in an area.
+- No single census table is known that contains both number of rooms and number of bedrooms, so the categories must be microsynthesised with the additional constraint that there cannot be more bedrooms than rooms.
+- There are small discrepancies in the counts in the LC4601EW (economic status) table, which we have observed to occasionally have one fewer entry in an area than the other tables. This is dealt with by oversampling.
+- Since occupants, rooms and bedrooms are capped (with the final value representing an '...or more' category, there is some imprecision in the microsynthesis:
+  - the count of population in households is lower than the true population estimate.
+  - the value of persons per bedroom does not quite match the census data, due to the imprecision inherent in the 4+ categories. This makes it difficult to use it as a link variable between household composition and rooms/bedrooms. (This mismatch could potentially be used to refine estimates of persons and bedrooms in properties, but is out of scope for the moment.)
 
 ### Communal Residences
-- The only available data is a count of the number of residences of a particular type within the area, and the total number of people in that type of residence in that area. The occupants are split evenly amongst the appropriate residences.
+- The only available data is a count of the number of residences of a particular type within the area, and the total number of people in that type of residence in that area. Data on the number of occupants in a specific communal residence is only available when there is only one of its type within the area.
+- Quite often, the number of occupants for communal residences is given as zero.
+- No data is available on the ethnicity or economic status of communal residents.
+- No data is available on the number of cars per communal residence.
 
 ### Unoccupied Households
 - No census data is available that indicate any characteristics of unoccupied dwellings, other than their existence.
 
-## Assumptions
+## Model Assumptions
 
 ### General
-
+...
 
 ### Occupied Households
-All categories are constrained at a minimum by geographical resolution and dwelling tenure, but note also: 
-
-- central heating assignment - no further constraint
-- occupants/rooms/bedrooms assignment - bedrooms cannot exceed rooms
-- household composition assignment - single occupant households are assigned directly, others are synthesised
-
+All categories are constrained at a minimum by geographical resolution and dwelling tenure. Given a particular area and tenure, the following categories are assigned randomly to the population, according to the aggregates for that area and tenure.
+- build type
+- central heating 
+- economic status of household reference person
+- ethnicity of household reference person
+- number of cars per household
+- number of occupants
+- rooms/bedrooms assignment is additionally contrained on
+  - the number of occupants
+  - bedrooms cannot exceed rooms
+- persons per bedroom (calculated ignoring the "or more" nature of the final value). 
+- household composition assignment
+  - single occupant households are assigned directly to dwellings with one occupant
+  - others are randomly assigned within the same area and tenure
 
 ### Communal Residences
-Census data provides a count of the number of, and total occupants of, each type of communal residence within an an OA. For each communal residence of each type in each OA, an entry is inserted into the overall dwelling population.
-
-Note the assumptions that were made:
-
-- Where there are multiple communal residences of the same type in an OA, the occupants are split equally (rounded to integer) across the residences.
-- The tenure of communal residences in not known, not deemed sufficiently important to synthesise. The type of the communal residence is assigned to this field.
-- The composition of residences is assigned a single value: `Communal'.
-- The type of communal residences is assigned a single value: `Multi-person'.
-- All communal residences are assumed to have some form of central heating.
+- Where there are multiple communal residences of the same type in an area, the occupants are split equally (rounded to integer) across the residences.
+- Tenure and build type are __unknown__.
+- The number of rooms and the number of bedrooms equal the number of occupants.
+- The composition of residences is multi-person.
+- All communal residences are assumed to have central heating.
+- The economic status of communal residents is generally unknown, but sometimes can be inferred by the residence type.
+- The ethnicity of the communal residence is mixed/multiple.
+- No cars is assumed.
 
 ### Unoccupied Households
-The microsynthesis is constrained only by OA. Note the assumptions that were made:
-
-- Zero occupants, and thus \(\le0.5\) persons per bedroom, were assigned to each dwelling.
+The microsynthesis is constrained only by area. Since no other information is available, characteristics are assigned by sampling a microsynthesised population of households according to build type, tenure and central heating. Other characteristics are assigned as follows:
+- zero occupants
+- rooms bedrooms are assigned randomly from the sample but with a further constraint on build type.
 - The type, tenure, rooms, bedrooms and central heating of the dwellings are not given in census data but are deemed sufficiently important to synthesise.
-- The composition opf these dwellings is assigned the value `Unoccupied'.
-- All communal residences are assumed to have some form of central heating.
-
-The type, tenure, rooms, bedrooms and central heating values for unoccupied dwellings were synthesised by sampling from the (larger) population of occupied households within the OA.
+- Composition, economic stats and ethnicity are __unknown__.
+- No cars.
 
 ## Consistency
 
-Pre-synthesis checks.
+Pre-microsynthesis checks are carried out on the input data, ensuring the table population totals are consistent. The most common reason for these checks failing is that the user has not specified an API key, see the installation section above.
 
-A number of tests are automatically carried out on the synthetic population to ensure that it is consistent with the input data...
+A number of tests are automatically carried out on the synthetic population to ensure that it is consistent with the input data:
+- synthesised dwelling population matches expected total
+- no category values are empty
+- the category values are all within the ranges given by the census data (unknown/unapplicable aside)
+- occupied, communal and unoccupied totals are expected
+- the totals for each value match census data for the following categories
+  - build type
+  - tenure
+  - central heating
+  - composition
+  - rooms and bedrooms
+  - economic status
+  - ethnicity
+  - number of cars
 
 # Output Data
 
@@ -168,7 +188,7 @@ For brevity amongst other reasons, only numeric values are stored in the data. E
   "5": "Multi-person household"
 },
 ```
-And thus we know that e.g. the value 5 corresponds to a multi-person household.
+And thus we know that e.g. the value 5 in the LC4408_C_AHTHUK11 column indicates a multi-person household.
 
 ## Example
 
@@ -204,7 +224,6 @@ Households:  5530
 Occupied households:  4385
 Unoccupied dwellings:  1145
 Communal residences:  42
-Dwellings:  5572
 Total dwellings:  5572
 Total population:  7375
 Population in occupied households:  7187
@@ -223,7 +242,7 @@ Writing synthetic population to ./synHouseholds.csv
 DONE
 ```
 
-The [output file](examples/synHouseholds.csv) looks like this:
+The [output file](example/synHouseholds.csv) looks like this:
 
 | |Area|LC4402_C_TYPACCOM|QS420EW_CELL|LC4402_C_TENHUK11|LC4408_C_AHTHUK11|LC4404EW_C_SIZHUK11|LC4404EW_C_ROOMS|LC4405EW_C_BEDROOMS|LC4408EW_C_PPBROOMHEW11|LC4402_C_CENHEATHUK11|LC4601EW_C_ECOPUK11|LC4202EW_C_ETHHUK11|LC4202EW_C_CARSNO
 |-|----|-----------------|------------|-----------------|-----------------|-------------------|----------------|-------------------|-----------------------|---------------------|-------------------|-------------------|-----------------
@@ -240,18 +259,16 @@ The [output file](examples/synHouseholds.csv) looks like this:
 
 And there are ten metadata files - one for each census table - which can be used to describe the numeric category values:
 
-
-
-- [LC4402EW](examples/LC4402EW_metadata.json)
-- [LC4404EW](examples/LC4404EW_metadata.json)
-- [LC4405EW](examples/LC4405EW_metadata.json)
-- [LC4408EW](examples/LC4408EW_metadata.json)
-- [LC1105EW](examples/LC1105EW_metadata.json)
-- [KS401EW](examples/KS401EW_metadata.json)
-- [QS420EW](examples/QS420EW_metadata.json)
-- [QS421EW](examples/QS421EW_metadata.json)
-- [LC4202EW](examples/LC4202EW_metadata.json)
-- [LC4601EW](examples/LC4601EW_metadata.json)
+- [LC4402EW](example/LC4402EW_metadata.json)
+- [LC4404EW](example/LC4404EW_metadata.json)
+- [LC4405EW](example/LC4405EW_metadata.json)
+- [LC4408EW](example/LC4408EW_metadata.json)
+- [LC1105EW](example/LC1105EW_metadata.json)
+- [KS401EW](example/KS401EW_metadata.json)
+- [QS420EW](example/QS420EW_metadata.json)
+- [QS421EW](example/QS421EW_metadata.json)
+- [LC4202EW](example/LC4202EW_metadata.json)
+- [LC4601EW](example/LC4601EW_metadata.json)
 
 Negative entries refer to either unknown (-1) or non-applicable (-2) values, and do not correspond to any census enumeration.
 
@@ -259,5 +276,6 @@ Negative entries refer to either unknown (-1) or non-applicable (-2) values, and
 
 - Zero rooms/bedrooms properties.
 
-Feel free to submit issues...
+__Feel free to submit issues (or even pull requests) in the normal github way...__
+
 
