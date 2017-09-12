@@ -3,11 +3,15 @@ __** WORK IN PROGRESS **__
 
 # Household Microsynthesis
 
+A python package for microsynthesising household poulations from census data, including communal and unoccupied residences.
+
 ## Installation
 
 ### Dependencies
 
 - `python3`
+
+The following are specified in `requirements.txt` and should be automatically installed, manual steps are shown below just in case. 
 
 - [UKCensusAPI](https://github.com/virgesmith/UKCensusAPI)
 ```
@@ -18,7 +22,7 @@ pip3 install git+git://github.com/virgesmith/UKCensusAPI.git
 pip3 install git+git://github.com/virgesmith/humanleague.git@1.0.1
 ```
 
-### Testing
+### Installation and Testing
 ```
 ./setup.py install
 ./setup.py test
@@ -35,37 +39,42 @@ scripts/run_microsynth.py "City of London" OA
 ```
 # Introduction
 
-This document outlines the methodology and software implementation of a scalable small area microsynthesis of dwellings in a given region. It uses a microsynthesis technique developed by the author (publication in peer review) that uses quasirandom sampling to directly generate non-fractional populations very efficently.
+This document outlines the methodology and software implementation of a scalable small area microsynthesis of dwellings in a given region. It uses a microsynthesis technique developed by the author (publication in press) that uses quasirandom sampling to directly generate non-fractional populations very efficently.
 
-This work also introduces and tests (successfully) a newly-developed extension to the microsynthesis technique that can deal with extra constraints (in this case the fact that a household cannot have more bedrooms than rooms). 
+This also introduces and tests (successfully) a newly-developed extension to the microsynthesis technique that can deal with extra constraints (in this case the fact that a household cannot have more bedrooms than rooms).
 
-# Terminology
+# Overview
 
-We use the term `unoccupied' in this work to mean a dwelling that is not permanently occupied, or is unoccupied, _on the census date_. This does not mean that the property is permanently unoccupied, but it does mean that there is essentially no data available for these properties. 
+The microsynthesis combines census data on occupied households, communal residences, and unoccupied dwellings to generate a synthetic population of dwellings classified in a number of categories.
 
-|Category    |Values|  
-|------------|------|  
-|Geography   |(output area)|  
-|Tenure      |Owned, Mortgaged/shared, Rented social, Rented private, (Communal category)|
-|BuildType   |Detached, Semi, Terrace, Flat/mobile, Communal|
-|Occupants   |1, 2, 3, 4+|
-|Rooms       |1, 2, 3, 4, 5, 6+|  
-|Bedrooms    |1, 2, 3, 4+|
-|CentHeat    |1 (no), 2(yes) | 
-|PPerBed     |<=0.5, (0.5,1], (1,1.5], >1.5| 
-|Composition |Single person, Married/civil partnership, Cohabiting couple, Single parent, Multi person, Unoccupied|
-|EconStatus  | ... |
-|Ethnicity   | ... |
-|NumCars     | None, One, Two or more|
+It can be used to generate a realistic synthetic population of dwellings in a region at a specified geopgraphical resolution. Regions can be one or more local authorities or countrywide, and the geographical resolutions supported are: local authority, MSOA, LSOA or OA. The synthetic population is consistent with the census aggregates within the specified geographical resolution.
 
-Since occupants, rooms and bedrooms are capped (with the final value representing an `...or more' category, there is some imprecision in the microsynthesis:
+The term 'unoccupied' in this context means a dwelling that is not permanently occupied, or is unoccupied, _on the census date_. This of course does not mean that the property is permanently unoccupied, and could actually mean that the occupants did not return the census form. It does mean that there is essentially no data available for these properties, other than their existence.
+
+|Category      |Column Name             |Description
+|--------------|------------------------|-----------
+|Geography     |Area                    |ONS code for geographical area (e.g. E00000001)  
+|Build Type    |LC4402_C_TYPACCOM       |Type of dwelling e.g. semi-detached
+|Communal Type |QS420EW_CELL            |Type of communal residence, e.g. nursing home
+|Tenure        |LC4402_C_TENHUK11       |Ownership, e.g. mortgaged
+|Composition   |LC4408_C_AHTHUK11       |Domestic situation, e.g. cohabiting couple
+|Occupants     |LC4404EW_C_SIZHUK11     |Number of occupants (capped at 4)
+|Rooms         |LC4404EW_C_ROOMS        |Number of rooms (capped at 6)
+|Bedrooms      |LC4405EW_C_BEDROOMS     |Number of bedrooms (capped at 4)
+|PPerBed       |LC4408EW_C_PPBROOMHEW11 |Ratio of occupants to bedrooms (approximate) 
+|CentHeat      |LC4402_C_CENHEATHUK11   |Presence of central heating 
+|EconStatus    |LC4601EW_C_ECOPUK11     |Economic status of household reference person, e.g employed full-time
+|Ethnicity     |LC4202EW_C_ETHHUK11     |Ethnicity of household reference person, e.g. Asian
+|NumCars       |LC4202EW_C_CARSNO       |Number of cars used by household (capped at 2)
+
+Since occupants, rooms and bedrooms are capped (with the final value representing an '...or more' category, there is some imprecision in the microsynthesis:
 
 - the count of population in households is lower than the true population estimate.}
 - the value of persons per bedroom (`PPerBed' above) does not quite match the census data, due to the imprecision inherent in the 4+ categories. This makes it difficult to use it as a link variable between household composition and rooms/bedrooms. (This mismatch could potentially be used to refine estimates of persons and bedrooms in properties, but is out of scope for the moment.)
 
 # Input Data
 
-The only user inputs required to run the model is the geographical area under consideration, e.g. `Newcastle upon Tyne' and the required geographical resolution, e.g. `LSOA'. 
+The only user inputs required to run the model is the geographical area under consideration, e.g. 'Newcastle upon Tyne' and the required geographical resolution, e.g. 'LSOA'. 
 
 The required 2011 Census tables are automatically downloaded using the [https://github.com/virgesmith/UKCensusAPI](UKCensusAPI) package from nomisweb.co.uk. (End users should ensure they have an account and an API key, otherwise data downloads may be incomplete.)  Since the data is essentially static, downloads are cached for efficiency.
 
@@ -82,16 +91,54 @@ The required 2011 Census tables are automatically downloaded using the [https://
 |`LC4601EW`| Tenure by economic activity by age - Household Reference Persons |
 |`LC4202EW`| Tenure by car or van availability by ethnic group of Household Reference Person (HRP) |
 
-Note the following limitations in the input data:
+# Methodology
 
+## Limitations of the input data
+
+### General
+- Data is from the 2011 census and assumed to be accurate at the time, but it is already over 6 years old.
+
+### Occupied Households
 - No census table is known that links rooms directly to bedrooms.
-- No census data is available that indicate any characteristics of unoccupied dwellings.
-- For communal residencesthe only available data is a count of the number of residences of a particular type within the area, and the total number of people in that type of residence in that area.
-- There are small discrepancies in the counts in the LC4601EW table, occasionally showing one fewer entry in an area.
+- There are small discrepancies in the counts in the LC4601EW (economic status) table, which occasionally has one fewer entry in an area.
 
-The Methodology section explains how these limitations are dealt with.
+### Communal Residences
+- The only available data is a count of the number of residences of a particular type within the area, and the total number of people in that type of residence in that area. The occupants are split evenly amongst the appropriate residences.
+
+### Unoccupied Households
+- No census data is available that indicate any characteristics of unoccupied dwellings, other than their existence.
+
+## Assumptions
+
+### General
+TODO...
+
+### Occupied Households
+TODO...
+
+### Communal Residences
+TODO...
+
+### Unoccupied Households
+TODO...
 
 # Output Data
+
+The output data consists of a single csv file containing the synthetic population, plus a number of json files containing metadata (one per census table). Each row represents a single dwelling.
+
+For brevity amongst other reasons, only numeric values are stored in the data. Each column name describes a category and a census table from which it came, e.g. column `LC4408_C_AHTHUK11` contains values from the `C_AHTHUK11` category in the `LC4408` table. Inspecting the metadata yields:
+```
+"C_AHTHUK11": {
+  "0": "All categories: Household type",
+  "1": "One person household",
+  "2": "Married or same-sex civil partnership couple household",
+  "3": "Cohabiting couple household",
+  "4": "Lone parent household",
+  "5": "Multi-person household"
+},
+
+```
+And thus we know that e.g. the value 5 corresponds to
 
 Example runtime output:
 
@@ -130,12 +177,14 @@ Writing synthetic population to ./synHouseholds.csv
 DONE
 ```
 
-The microsynthesed dwelling population is rendered as a `csv` file. Each row in the table represents an individual dwelling. The columns contain the categories described in the previous section.
+The microsynthesed dwelling population is rendered as a csv file. Each row in the table represents an individual dwelling. The columns contain the categories described in the previous section.
 
 For ease of use, enumerated categories (e.g Tenure) are represented in both text and numeric format. The numeric value is generally the same value used by the census; the text values are either the census text, abbreviated in some cases. The tables below map numeric to text values for these categories.
 
 Since no tenure information is forthcoming for communal residences, the Tenure and TenureName columns are repurposed to store information about the type of the communal residence (see table below). The Tenure values are offset by 100 to avoid confusion.
 
+
+TODO use an example...
 
 |Category | Text | Value |
 |---------|------|-------| 
@@ -148,7 +197,7 @@ Since no tenure information is forthcoming for communal residences, the Tenure a
 |                   | Mortgaged/shared | 3  
 |                   | Rented social  | 5   
 |                   | Rented private | 6   
-|(Communal)         | Medical and care establishment: NHS | 102   
+|CommunalType       | Medical and care establishment: NHS | 102   
 |                   | Medical and care establishment: Local Authority | 106 
 |                   | Medical and care establishment: Registered Social Landlord/Housing Association | 111 
 |                   | Medical and care establishment: Other | 114 

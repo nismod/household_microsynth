@@ -1,0 +1,43 @@
+{
+  "description": "LC4202EW - Tenure by car or van availability by ethnic group of Household Reference Person (HRP)",
+  "nomis_table": "NM_880_1",
+  "fields": {
+    "FREQ": {
+      "A": "Annually"
+    },
+    "C_TENHUK11": {
+      "0": "All categories: Tenure",
+      "1": "Owned or shared ownership: Total",
+      "2": "Owned: Owned outright",
+      "3": "Owned: Owned with a mortgage or loan or shared ownership",
+      "4": "Rented or living rent free: Total",
+      "5": "Rented: Social rented",
+      "6": "Rented: Private rented or living rent free"
+    },
+    "C_CARSNO": {
+      "0": "All categories: Car or van availability",
+      "1": "No cars or vans in household",
+      "2": "1 car or van in household",
+      "3": "2 or more cars or vans in household"
+    },
+    "GEOGRAPHY": {
+      "2092957699": "England",
+      "2092957700": "Wales",
+      "2092957703": "England and Wales"
+    },
+    "C_ETHHUK11": {
+      "0": "All categories: Ethnic group of HRP",
+      "1": "White: Total",
+      "2": "White: English/Welsh/Scottish/Northern Irish/British",
+      "3": "White: Irish",
+      "4": "White: Other White",
+      "5": "Mixed/multiple ethnic group",
+      "6": "Asian/Asian British",
+      "7": "Black/African/Caribbean/Black British",
+      "8": "Other ethnic group"
+    },
+    "MEASURES": {
+      "20100": "value"
+    }
+  }
+}

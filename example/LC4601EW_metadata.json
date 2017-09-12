@@ -1,0 +1,52 @@
+{
+  "description": "LC4601EW - Tenure by economic activity by age - Household Reference Persons",
+  "nomis_table": "NM_899_1",
+  "fields": {
+    "C_TENHUK11": {
+      "0": "All categories: Tenure",
+      "1": "Owned or shared ownership: Total",
+      "2": "Owned: Owned outright",
+      "3": "Owned: Owned with a mortgage or loan or shared ownership",
+      "4": "Rented or living rent free: Total",
+      "5": "Rented: Social rented",
+      "6": "Rented: Private rented or living rent free"
+    },
+    "FREQ": {
+      "A": "Annually"
+    },
+    "C_ECOPUK11": {
+      "0": "All categories: Economic activity",
+      "1": "Economically active: Total",
+      "2": "Economically active: In employment: Total",
+      "3": "Economically active: In employment: Employee: Total",
+      "4": "Economically active: In employment: Employee: Part-time",
+      "5": "Economically active: In employment: Employee: Full-time",
+      "6": "Economically active: In employment: Self-employed: Total",
+      "7": "Economically active: In employment: Self-employed: Part-time",
+      "8": "Economically active: In employment: Self-employed: Full-time",
+      "9": "Economically active: In employment: Full-time students",
+      "10": "Economically active: Unemployed: Total",
+      "11": "Economically active: Unemployed: Unemployed (excluding full-time students)",
+      "12": "Economically active: Unemployed: Full-time students",
+      "13": "Economically inactive: Total",
+      "14": "Economically inactive: Retired",
+      "15": "Economically inactive: Student (including full-time students)",
+      "16": "Economically inactive: Looking after home or family",
+      "17": "Economically inactive: Long-term sick or disabled",
+      "18": "Economically inactive: Other"
+    },
+    "GEOGRAPHY": {
+      "2092957699": "England",
+      "2092957700": "Wales",
+      "2092957703": "England and Wales"
+    },
+    "C_AGE": {
+      "0": "All categories: Age 16 and over",
+      "1": "Age 16 to 64",
+      "2": "Age 65 and over"
+    },
+    "MEASURES": {
+      "20100": "value"
+    }
+  }
+}

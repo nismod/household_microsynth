@@ -1,0 +1,70 @@
+{
+  "description": "QS421EW - Communal establishment management and type - People",
+  "nomis_table": "NM_553_1",
+  "fields": {
+    "CELL": {
+      "0": "All categories: Communal establishment management and type",
+      "1": "Medical and care establishment: Total",
+      "2": "Medical and care establishment: NHS: Total",
+      "3": "Medical and care establishment: NHS: General hospital",
+      "4": "Medical and care establishment: NHS: Mental health hospital/unit (including secure units)",
+      "5": "Medical and care establishment: NHS: Other hospital",
+      "6": "Medical and care establishment: Local Authority: Total",
+      "7": "Medical and care establishment: Local Authority: Children's home (including secure units)",
+      "8": "Medical and care establishment: Local Authority: Care home with nursing",
+      "9": "Medical and care establishment: Local Authority: Care home without nursing",
+      "10": "Medical and care establishment: Local Authority: Other home",
+      "11": "Medical and care establishment: Registered Social Landlord/Housing Association: Total",
+      "12": "Medical and care establishment: Registered Social Landlord/Housing Association: Home or hostel",
+      "13": "Medical and care establishment: Registered Social Landlord/Housing Association: Sheltered housing only",
+      "14": "Medical and care establishment: Other: Total",
+      "15": "Medical and care establishment: Other: Care home with nursing",
+      "16": "Medical and care establishment: Other: Care home without nursing",
+      "17": "Medical and care establishment: Other: Children's home (including secure units)",
+      "18": "Medical and care establishment: Other: Mental health hospital/unit (including secure units)",
+      "19": "Medical and care establishment: Other: Other hospital",
+      "20": "Medical and care establishment: Other: Other establishment",
+      "21": "Other establishment: Total",
+      "22": "Other establishment: Defence",
+      "23": "Other establishment: Prison service",
+      "24": "Other establishment: Approved premises (probation/bail hostel)",
+      "25": "Other establishment: Detention centres and other detention",
+      "26": "Other establishment: Education",
+      "27": "Other establishment: Hotel: guest house; B&B; youth hostel",
+      "28": "Other establishment: Hostel or temporary shelter for the homeless",
+      "29": "Other establishment: Holiday accommodation (for example holiday parks)",
+      "30": "Other establishment: Other travel or temporary accommodation",
+      "31": "Other establishment: Religious",
+      "32": "Other establishment: Staff/worker accommodation only",
+      "33": "Other establishment: Other",
+      "34": "Establishment not stated"
+    },
+    "GEOGRAPHY": {
+      "2092957699": "England",
+      "2092957700": "Wales",
+      "2092957703": "England and Wales"
+    },
+    "RURAL_URBAN": {
+      "0": "Total",
+      "1": "Urban city and town in a sparse setting",
+      "2": "Urban major conurbation",
+      "3": "Urban minor conurbation",
+      "4": "Urban city and town",
+      "101": "Rural (total)",
+      "6": "Rural village in a sparse setting",
+      "7": "Rural hamlet and isolated dwellings in a sparse setting",
+      "8": "Rural town and fringe",
+      "9": "Rural village",
+      "10": "Rural hamlet and isolated dwellings",
+      "100": "Urban (total)",
+      "5": "Rural town and fringe in a sparse setting"
+    },
+    "FREQ": {
+      "A": "Annually"
+    },
+    "MEASURES": {
+      "20100": "value",
+      "20301": "percent"
+    }
+  }
+}

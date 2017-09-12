@@ -1,0 +1,51 @@
+{
+  "description": "LC1105EW - Residence type by sex by age",
+  "nomis_table": "NM_1086_1",
+  "fields": {
+    "C_SEX": {
+      "0": "All persons",
+      "1": "Males",
+      "2": "Females"
+    },
+    "FREQ": {
+      "A": "Annually"
+    },
+    "C_RESIDENCE_TYPE": {
+      "0": "All categories: Residence type",
+      "1": "Lives in a household",
+      "2": "Lives in a communal establishment"
+    },
+    "GEOGRAPHY": {
+      "2092957699": "England",
+      "2092957700": "Wales",
+      "2092957703": "England and Wales"
+    },
+    "C_AGE": {
+      "0": "All categories: Age",
+      "1": "Age 0 to 4",
+      "2": "Age 5 to 7",
+      "3": "Age 8 to 9",
+      "4": "Age 10 to 14",
+      "5": "Age 15",
+      "6": "Age 16 to 17",
+      "7": "Age 18 to 19",
+      "8": "Age 20 to 24",
+      "9": "Age 25 to 29",
+      "10": "Age 30 to 34",
+      "11": "Age 35 to 39",
+      "12": "Age 40 to 44",
+      "13": "Age 45 to 49",
+      "14": "Age 50 to 54",
+      "15": "Age 55 to 59",
+      "16": "Age 60 to 64",
+      "17": "Age 65 to 69",
+      "18": "Age 70 to 74",
+      "19": "Age 75 to 79",
+      "20": "Age 80 to 84",
+      "21": "Age 85 and over"
+    },
+    "MEASURES": {
+      "20100": "value"
+    }
+  }
+}

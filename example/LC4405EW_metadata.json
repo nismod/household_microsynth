@@ -1,0 +1,40 @@
+{
+  "description": "LC4405EW - Tenure by household size by number of bedrooms",
+  "nomis_table": "NM_890_1",
+  "fields": {
+    "C_TENHUK11": {
+      "0": "All categories: Tenure",
+      "1": "Owned or shared ownership: Total",
+      "2": "Owned: Owned outright",
+      "3": "Owned: Owned with a mortgage or loan or shared ownership",
+      "4": "Rented or living rent free: Total",
+      "5": "Rented: Social rented",
+      "6": "Rented: Private rented or living rent free"
+    },
+    "FREQ": {
+      "A": "Annually"
+    },
+    "C_BEDROOMS": {
+      "0": "All categories: Number of bedrooms",
+      "1": "1 bedroom",
+      "2": "2 bedrooms",
+      "3": "3 bedrooms",
+      "4": "4 or more bedrooms"
+    },
+    "GEOGRAPHY": {
+      "2092957699": "England",
+      "2092957700": "Wales",
+      "2092957703": "England and Wales"
+    },
+    "C_SIZHUK11": {
+      "0": "All categories: Household size",
+      "1": "1 person in household",
+      "2": "2 people in household",
+      "3": "3 people in household",
+      "4": "4 or more people in household"
+    },
+    "MEASURES": {
+      "20100": "value"
+    }
+  }
+}

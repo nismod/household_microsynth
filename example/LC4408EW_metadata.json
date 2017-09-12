@@ -1,0 +1,41 @@
+{
+  "description": "LC4408EW - Tenure by number of persons per bedroom in household by household type",
+  "nomis_table": "NM_893_1",
+  "fields": {
+    "C_AHTHUK11": {
+      "0": "All categories: Household type",
+      "1": "One person household",
+      "2": "Married or same-sex civil partnership couple household",
+      "3": "Cohabiting couple household",
+      "4": "Lone parent household",
+      "5": "Multi-person household"
+    },
+    "C_TENHUK11": {
+      "0": "All categories: Tenure",
+      "1": "Owned or shared ownership: Total",
+      "2": "Owned: Owned outright",
+      "3": "Owned: Owned with a mortgage or loan or shared ownership",
+      "4": "Rented or living rent free: Total",
+      "5": "Rented: Social rented",
+      "6": "Rented: Private rented or living rent free"
+    },
+    "FREQ": {
+      "A": "Annually"
+    },
+    "GEOGRAPHY": {
+      "2092957699": "England",
+      "2092957700": "Wales",
+      "2092957703": "England and Wales"
+    },
+    "C_PPBROOMHEW11": {
+      "0": "All categories: Number of persons per bedroom in household",
+      "1": "Up to 0.5 persons per bedroom",
+      "2": "Over 0.5 and up to 1.0 persons per bedroom",
+      "3": "Over 1.0 and up to 1.5 persons per bedroom",
+      "4": "Over 1.5 persons per bedroom"
+    },
+    "MEASURES": {
+      "20100": "value"
+    }
+  }
+}

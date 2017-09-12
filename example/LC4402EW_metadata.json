@@ -1,0 +1,39 @@
+{
+  "description": "LC4402EW - Accommodation type by type of central heating in household by tenure",
+  "nomis_table": "NM_887_1",
+  "fields": {
+    "C_TENHUK11": {
+      "0": "All categories: Tenure",
+      "1": "Owned or shared ownership: Total",
+      "2": "Owned: Owned outright",
+      "3": "Owned: Owned with a mortgage or loan or shared ownership",
+      "4": "Rented or living rent free: Total",
+      "5": "Rented: Social rented",
+      "6": "Rented: Private rented or living rent free"
+    },
+    "C_CENHEATHUK11": {
+      "0": "All categories: Type of central heating in household",
+      "1": "Does not have central heating",
+      "2": "Does have central heating"
+    },
+    "FREQ": {
+      "A": "Annually"
+    },
+    "C_TYPACCOM": {
+      "0": "All categories: Accommodation type",
+      "1": "Whole house or bungalow: Total",
+      "2": "Whole house or bungalow: Detached",
+      "3": "Whole house or bungalow: Semi-detached",
+      "4": "Whole house or bungalow: Terraced (including end-terrace)",
+      "5": "Flat, maisonette or apartment, or mobile/temporary accommodation"
+    },
+    "GEOGRAPHY": {
+      "2092957699": "England",
+      "2092957700": "Wales",
+      "2092957703": "England and Wales"
+    },
+    "MEASURES": {
+      "20100": "value"
+    }
+  }
+}
