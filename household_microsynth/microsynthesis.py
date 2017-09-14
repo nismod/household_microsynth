@@ -89,10 +89,10 @@ class Microsynthesis:
       # add unoccupied properties
       self.__add_unoccupied(area)
 
-      # end area loop
+      # adds rooms and beds based on same dist as occupied households in same area and type
+      self.__add_unoccupied_detail(area)
 
-    # adds rooms and beds based on same dist as occupied households in same area and type
-    self.__add_unoccupied_detail()
+      # end area loop
 
   # 1. unconstrained usim of type and central heating
   def __step1(self, area, tenure):
@@ -125,7 +125,7 @@ class Microsynthesis:
     np.random.shuffle(econ)
 
     if len(thdata) != len(econ):
-      print("WARNING: econ mismatch in", area, len(thdata), len(econ))
+      print("WARNING: %s EconStatus mismatch: %d vs %d" % (area, len(thdata), len(econ)))
 
 
     subindex = self.index
@@ -142,12 +142,12 @@ class Microsynthesis:
   # 2. constrained usim of rooms and bedrooms
   def __step2(self, area, tenure, all_occupants):
     for occ in all_occupants:
-      rmarginal = self.lc4404[(self.lc4404.GEOGRAPHY_CODE == area)
-                        & (self.lc4404.C_TENHUK11 == tenure)
-                        & (self.lc4404.C_SIZHUK11 == occ)].OBS_VALUE.as_matrix()
-      bmarginal = self.lc4405[(self.lc4405.GEOGRAPHY_CODE == area)
-                        & (self.lc4405.C_TENHUK11 == tenure)
-                        & (self.lc4405.C_SIZHUK11 == occ)].OBS_VALUE.as_matrix()
+      rmarginal = self.lc4404.loc[(self.lc4404.GEOGRAPHY_CODE == area)
+                                & (self.lc4404.C_TENHUK11 == tenure)
+                                & (self.lc4404.C_SIZHUK11 == occ)].OBS_VALUE.as_matrix()
+      bmarginal = self.lc4405.loc[(self.lc4405.GEOGRAPHY_CODE == area)
+                                & (self.lc4405.C_TENHUK11 == tenure)
+                                & (self.lc4405.C_SIZHUK11 == occ)].OBS_VALUE.as_matrix()
 
       usim = humanleague.synthPopG(rmarginal, bmarginal, self.permitted)
       pop = usim["result"]
@@ -285,21 +285,32 @@ class Microsynthesis:
 
   # rooms and beds for unoccupied (sampled from occupied population in same area and same BuildType)
   # TODO this is highly suboptimal, subsetting the same thing over and over again
-  def __add_unoccupied_detail(self):
-    unocc = self.dwellings.loc[self.dwellings.LC4408_C_AHTHUK11 == self.UNKNOWN]
-    for i in unocc.index: 
-      # sample from all occupied dwellings of same build type in same area
-      sample = self.dwellings.loc[(self.dwellings.Area == unocc.at[i, "Area"]) 
-                          & (self.dwellings.LC4402_C_TYPACCOM == unocc.at[i,"LC4402_C_TYPACCOM"]) 
-                          & (self.dwellings.LC4408_C_AHTHUK11 != self.UNKNOWN)].sample()
-      assert len(sample)
+  def __add_unoccupied_detail(self, area):
 
-      r = sample.at[sample.index[0], "LC4404EW_C_ROOMS"]
-      b = sample.at[sample.index[0], "LC4405EW_C_BEDROOMS"]
+    for t in self.type_index:
+      # get unoccupied dwellings
+      unocc = self.dwellings.loc[(self.dwellings.Area == area) 
+                               & (self.dwellings.LC4402_C_TYPACCOM == t)
+                               & (self.dwellings.LC4408_C_AHTHUK11 == self.UNKNOWN)]
+      nunocc = len(unocc)
+      if nunocc == 0:
+        continue
 
-      self.dwellings.at[i, "LC4404EW_C_ROOMS"] = r
-      self.dwellings.at[i, "LC4405EW_C_BEDROOMS"] = b 
-      #self.dwellings.at[i, "LC4408EW_C_PPBROOMHEW11"] = 1 # <= 0.5
+      # sample (with repl) from all occupied dwellings of same build type in same area
+      sample = self.dwellings.loc[(self.dwellings.Area == area) 
+                          & (self.dwellings.LC4402_C_TYPACCOM == t) 
+                          & (self.dwellings.LC4408_C_AHTHUK11 != self.UNKNOWN)].sample(len(unocc), replace=True)
+      # repeated index values cause problems
+      sample = sample.reset_index(drop=True)
+      j = 0
+      for i in unocc.index: 
+        #assert len(sample)
+        r = sample.at[sample.index[j], "LC4404EW_C_ROOMS"]
+        b = sample.at[sample.index[j], "LC4405EW_C_BEDROOMS"]
+
+        self.dwellings.at[i, "LC4404EW_C_ROOMS"] = r
+        self.dwellings.at[i, "LC4405EW_C_BEDROOMS"] = b 
+        j = j + 1
 
   # Retrieves census tables for the specified geography
   # checks for locally cached data or calls nomisweb API

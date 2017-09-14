@@ -41,11 +41,8 @@ def main(region, resolution):
   # init microsynthesis
   try:
     msynth = Microsynthesiser.Microsynthesis(region, resolution, CACHE_DIR)
-  except ValueError as e:
+  except Exception as e:
     print(e)
-    return
-  except:
-    print("Unknown exception")
     return
 
   # Do some basic checks on totals
@@ -78,16 +75,12 @@ def main(region, resolution):
 
   print("Number of geographical areas: ", len(msynth.lc4402.GEOGRAPHY_CODE.unique()))
 
-  # # generate the population
-  # try:
-  #   msynth.run()
-  # except ValueError as e:
-  #   print(e)
-  #   return
-  # except:
-  #   print("Unknown exception")
-  #   return
-  msynth.run()
+  # generate the population
+  try:
+    msynth.run()
+  except Exception as e:
+    print(e)
+    return
 
   print("Done. Exec time(s): ", time.time() - start_time)
 
@@ -97,7 +90,7 @@ def main(region, resolution):
   output = "./synHouseholds.csv"
   print("Writing synthetic population to", output)
   msynth.dwellings.to_csv(output)
-
+  
   print("DONE")
 
 if __name__ == "__main__":

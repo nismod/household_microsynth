@@ -131,9 +131,9 @@ def check(msynth, total_occ_dwellings, total_households, total_communal):
   # Economic status (might be small diffs) (ignoring communal and unoccupied)
   assert np.array_equal(sorted(msynth.dwellings[msynth.dwellings.LC4601EW_C_ECOPUK11 != msynth.UNKNOWN].LC4601EW_C_ECOPUK11.unique()), msynth.lc4601["C_ECOPUK11"].unique())
   for i in msynth.lc4601["C_ECOPUK11"].unique():
-    assert abs(len(msynth.dwellings[(msynth.dwellings.LC4601EW_C_ECOPUK11 == i)
+    assert len(msynth.dwellings[(msynth.dwellings.LC4601EW_C_ECOPUK11 == i)
                              & (msynth.dwellings.LC4404EW_C_SIZHUK11 != 0)
-                             & (msynth.dwellings.QS420EW_CELL == msynth.NOTAPPLICABLE)]) - sum(msynth.lc4601[msynth.lc4601["C_ECOPUK11"] == i].OBS_VALUE)) < 2
+                             & (msynth.dwellings.QS420EW_CELL == msynth.NOTAPPLICABLE)]) >= sum(msynth.lc4601[msynth.lc4601["C_ECOPUK11"] == i].OBS_VALUE)
 
   # Ethnicity (ignoring communal and unoccupied)
   assert np.array_equal(sorted(msynth.dwellings[msynth.dwellings.LC4202EW_C_ETHHUK11 != msynth.UNKNOWN].LC4202EW_C_ETHHUK11.unique()), msynth.lc4202["C_ETHHUK11"].unique())
