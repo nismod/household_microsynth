@@ -92,7 +92,11 @@ __It is important that users ensure they have an account with nomisweb.co.uk and
 
 ## Overview
 
+In essence, the model converts aggregate census data into a synthetic population of individual households that is consistent with census data at the specified resolution. 
+
 The microsynthesis methodology can be split into three distinct parts: occupied households, communal residences, and unoccupied dwellings. The assumptions and data limitations differ for each of these and consequently the approach does too. See below for more detail.
+
+Where the category values for a specific dwelling are not known (e.g. ethnicity of unoccupied household), or are not applicable (e.g. communal residence type for a standard household), negative values are inserted into the output, with -1 indcating __unknown__ and -2 indicating __not applicable__. These values (deliberately) do not correspond to any census enumeration.
 
 ## Limitations of the input data
 
@@ -270,11 +274,7 @@ And there are ten metadata files - one for each census table - which can be used
 - [LC4202EW](example/LC4202EW_metadata.json)
 - [LC4601EW](example/LC4601EW_metadata.json)
 
-Negative entries refer to either unknown (-1) or non-applicable (-2) values, and do not correspond to any census enumeration.
-
-# Outstanding Issues
-
-- Zero rooms/bedrooms properties.
+# Contributing
 
 __Feel free to submit issues (or even pull requests) in the normal github way...__
 
