@@ -69,7 +69,7 @@ def communal_economic_status(communal_type):
   }
   return communal_econ_map[communal_type]
 
-def check(msynth, total_occ_dwellings, total_households, total_communal):
+def check(msynth, total_occ_dwellings, total_households, total_communal, total_household_poplb, total_communal_pop):
   # correct number of dwellings
   assert len(msynth.dwellings) == msynth.total_dwellings
   # check no missing/NaN values
@@ -82,12 +82,19 @@ def check(msynth, total_occ_dwellings, total_households, total_communal):
   assert np.array_equal(sorted(msynth.dwellings.LC4408EW_C_PPBROOMHEW11.unique()), msynth.ppb_index)
   assert np.array_equal(sorted(msynth.dwellings.LC4402_C_CENHEATHUK11.unique()), msynth.ch_index)
 
-  # occupied/unoccupied/communal totals correct
+  # occupied/unoccupied/communal dwelling totals correct
   assert len(msynth.dwellings[(msynth.dwellings.QS420EW_CELL == msynth.NOTAPPLICABLE)
                             & (msynth.dwellings.LC4404EW_C_SIZHUK11 != 0)]) == total_occ_dwellings
   assert len(msynth.dwellings[(msynth.dwellings.QS420EW_CELL == msynth.NOTAPPLICABLE)
                             & (msynth.dwellings.LC4404EW_C_SIZHUK11 == 0)]) == total_households - total_occ_dwellings
   assert len(msynth.dwellings[msynth.dwellings.QS420EW_CELL != msynth.NOTAPPLICABLE]) == total_communal
+
+  # occupied/unoccupied/communal occupants totals correct
+  assert msynth.dwellings[(msynth.dwellings.QS420EW_CELL == msynth.NOTAPPLICABLE)
+                            & (msynth.dwellings.LC4404EW_C_SIZHUK11 != 0)].LC4404EW_C_SIZHUK11.sum() == total_household_poplb
+  assert msynth.dwellings[(msynth.dwellings.QS420EW_CELL == msynth.NOTAPPLICABLE)
+                            & (msynth.dwellings.LC4404EW_C_SIZHUK11 == 0)].LC4404EW_C_SIZHUK11.sum() == 0
+  assert msynth.dwellings[msynth.dwellings.QS420EW_CELL != msynth.NOTAPPLICABLE].CommunalSize.sum() == total_communal_pop
 
 
   # Build (accomodation) type (occupied only)
@@ -118,7 +125,10 @@ def check(msynth, total_occ_dwellings, total_households, total_communal):
     assert len(msynth.dwellings[(msynth.dwellings.LC4404EW_C_ROOMS == i)
                               & (msynth.dwellings.LC4404EW_C_SIZHUK11 != 0)
                               & (msynth.dwellings.QS420EW_CELL == msynth.NOTAPPLICABLE)]) == sum(msynth.lc4404[msynth.lc4404.C_ROOMS == i].OBS_VALUE)
-  print("Zero rooms: ", len(msynth.dwellings[msynth.dwellings.LC4404EW_C_ROOMS == 0]))
+  # check communal residences rooms are all UNKNOWN
+  assert(msynth.dwellings[msynth.dwellings.LC4402_C_TYPACCOM == msynth.NOTAPPLICABLE].LC4404EW_C_ROOMS.unique() == msynth.UNKNOWN)
+  # check unoccupied residences rooms are all "known"
+  assert(msynth.dwellings[msynth.dwellings.LC4404EW_C_SIZHUK11 == 0].LC4404EW_C_ROOMS.min() > 0)
 
   # Bedrooms (ignoring communal and unoccupied)
   assert np.array_equal(sorted(msynth.dwellings[msynth.dwellings.LC4402_C_TYPACCOM != msynth.NOTAPPLICABLE].LC4405EW_C_BEDROOMS.unique()), msynth.lc4405["C_BEDROOMS"].unique())
@@ -126,7 +136,11 @@ def check(msynth, total_occ_dwellings, total_households, total_communal):
     assert len(msynth.dwellings[(msynth.dwellings.LC4405EW_C_BEDROOMS == i)
                              & (msynth.dwellings.LC4404EW_C_SIZHUK11 != 0)
                              & (msynth.dwellings.QS420EW_CELL == msynth.NOTAPPLICABLE)]) == sum(msynth.lc4405[msynth.lc4405.C_BEDROOMS == i].OBS_VALUE)
-  print("Zero bedrooms: ", len(msynth.dwellings[msynth.dwellings.LC4405EW_C_BEDROOMS == 0]))
+  # check communal residences bedrooms are all UNKNOWN
+  assert(msynth.dwellings[msynth.dwellings.LC4402_C_TYPACCOM == msynth.NOTAPPLICABLE].LC4405EW_C_BEDROOMS.unique() == msynth.UNKNOWN)
+  # check unoccupied residences bedrooms are all "known"
+  assert(msynth.dwellings[msynth.dwellings.LC4404EW_C_SIZHUK11 == 0].LC4405EW_C_BEDROOMS.min() > 0)
+
 
   # Economic status (might be small diffs) (ignoring communal and unoccupied)
   assert np.array_equal(sorted(msynth.dwellings[msynth.dwellings.LC4601EW_C_ECOPUK11 != msynth.UNKNOWN].LC4601EW_C_ECOPUK11.unique()), msynth.lc4601["C_ECOPUK11"].unique())
@@ -149,6 +163,6 @@ def check(msynth, total_occ_dwellings, total_households, total_communal):
                              & (msynth.dwellings.LC4404EW_C_SIZHUK11 != 0)
                              & (msynth.dwellings.QS420EW_CELL == msynth.NOTAPPLICABLE)]) == sum(msynth.lc4202[msynth.lc4202["C_CARSNO"] == i].OBS_VALUE)
 
-  print("OK")
+  return True
 
 

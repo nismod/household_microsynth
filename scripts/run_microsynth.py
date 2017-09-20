@@ -58,8 +58,8 @@ def main(region, resolution):
   total_dwellings = total_households + total_communal
 
   occ_pop_lbound = sum(msynth.lc4404.C_SIZHUK11 * msynth.lc4404.OBS_VALUE)
-  household_dwellings = sum(msynth.lc1105[msynth.lc1105.C_RESIDENCE_TYPE == 1].OBS_VALUE)
-  communal_dwellings = sum(msynth.lc1105[msynth.lc1105.C_RESIDENCE_TYPE == 2].OBS_VALUE)
+  household_pop = sum(msynth.lc1105[msynth.lc1105.C_RESIDENCE_TYPE == 1].OBS_VALUE)
+  communal_pop = sum(msynth.lc1105[msynth.lc1105.C_RESIDENCE_TYPE == 2].OBS_VALUE)
 
   print("Households: ", total_households)
   print("Occupied households: ", total_occ_dwellings)
@@ -68,10 +68,10 @@ def main(region, resolution):
 
   print("Total dwellings: ", total_dwellings)
   print("Total population: ", total_population)
-  print("Population in occupied households: ", household_dwellings)
-  print("Population in communal residences: ", communal_dwellings)
+  print("Population in occupied households: ", household_pop)
+  print("Population in communal residences: ", communal_pop)
   print("Population lower bound from occupied households: ", occ_pop_lbound)
-  print("Occupied household dwellings underestimate: ", household_dwellings - occ_pop_lbound)
+  print("Occupied household dwellings underestimate: ", household_pop - occ_pop_lbound)
 
   print("Number of geographical areas: ", len(msynth.lc4402.GEOGRAPHY_CODE.unique()))
 
@@ -85,12 +85,14 @@ def main(region, resolution):
   print("Done. Exec time(s): ", time.time() - start_time)
 
   print("Checking consistency")
-  Utils.check(msynth, total_occ_dwellings, total_households, total_communal)
-
+  ok = Utils.check(msynth, total_occ_dwellings, total_households, total_communal, occ_pop_lbound, communal_pop)
+  if ok:
+    print("ok")
+  else:
+    print("failed")
   output = "./synHouseholds.csv"
   print("Writing synthetic population to", output)
   msynth.dwellings.to_csv(output)
-  
   print("DONE")
 
 if __name__ == "__main__":
