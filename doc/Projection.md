@@ -19,6 +19,8 @@ Produce a dataset from this containing:
 where postcodes are not found in the lookup, LSOA is set to UNKNOWN
 a small number of entries in the land registry data do not have postcodes, again LSOA is set to UNKNOWN
 
+Data is downloaded in monthly batches for all of England & Wales.
+
 ### Data Sources
 
 [HM Land Registry Open Data - Price Paid Data](http://landregistry.data.gov.uk/app/ppd/)
