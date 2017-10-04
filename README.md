@@ -59,6 +59,7 @@ Category values for a dwelling may be unknown or unapplicable in the synthesised
 |Tenure        |LC4402_C_TENHUK11       |Ownership, e.g. mortgaged
 |Composition   |LC4408_C_AHTHUK11       |Domestic situation, e.g. cohabiting couple
 |Occupants     |LC4404EW_C_SIZHUK11     |Number of occupants (capped at 4)
+|              |CommunalSize            |Number of communal occupants (estimated)
 |Rooms         |LC4404EW_C_ROOMS        |Number of rooms (capped at 6)
 |Bedrooms      |LC4405EW_C_BEDROOMS     |Number of bedrooms (capped at 4)
 |PPerBed       |LC4408EW_C_PPBROOMHEW11 |Ratio of occupants to bedrooms (approximate) 
@@ -96,7 +97,7 @@ In essence, the model converts aggregate census data into a synthetic population
 
 The microsynthesis methodology can be split into three distinct parts: occupied households, communal residences, and unoccupied dwellings. The assumptions and data limitations differ for each of these and consequently the approach does too. See below for more detail.
 
-Where the category values for a specific dwelling are not known (e.g. ethnicity of unoccupied household), or are not applicable (e.g. communal residence type for a standard household), negative values are inserted into the output, with -1 indcating __unknown__ and -2 indicating __not applicable__. These values (deliberately) do not correspond to any census enumeration.
+Where the category values for a specific dwelling are not known (e.g. ethnicity of unoccupied household), or are not applicable (e.g. communal residence type for a standard household), negative values are inserted into the output, with -1 indicating __unknown__ and -2 indicating __not applicable__. These values (deliberately) do not correspond to any census enumeration. Additionally, the value zero is used for the number of occupants in unoccupied households (despite the fact that census convention normally uses this value to indicate an aggregate count over all categories).
 
 ## Limitations of the input data
 
@@ -141,9 +142,10 @@ All categories are constrained at a minimum by geographical resolution and dwell
   - others are randomly assigned within the same area and tenure
 
 ### Communal Residences
-- Where there are multiple communal residences of the same type in an area, the occupants are split equally (rounded to integer) across the residences.
+- Where there are multiple communal residences of the same type in an area, the occupants are split equally (rounded to integer) across the residences. 
+- Occupant counts for communal residences are stored in the "CommunalSize" column since they do not correspond to the metadata that describes the LC4404EW_C_SIZHUK11 column.
 - Tenure and build type are __unknown__.
-- The number of rooms and the number of bedrooms equal the number of occupants.
+- The number of rooms and the number of bedrooms are __unknown__.
 - The composition of residences is multi-person.
 - All communal residences are assumed to have central heating.
 - The economic status of communal residents is generally unknown, but sometimes can be inferred by the residence type.
@@ -151,10 +153,9 @@ All categories are constrained at a minimum by geographical resolution and dwell
 - No cars is assumed.
 
 ### Unoccupied Households
-The microsynthesis is constrained only by area. Since no other information is available, characteristics are assigned by sampling a microsynthesised population of households according to build type, tenure and central heating. Other characteristics are assigned as follows:
+The type, tenure, rooms, bedrooms and central heating of the dwellings are not given in census data but are deemed sufficiently important to microsynthesise. The microsynthesis is constrained only by area. Since no other information is available, characteristics are assigned by sampling a microsynthesised population of households according to build type, tenure and central heating. Other characteristics are assigned as follows:
 - zero occupants
-- rooms bedrooms are assigned randomly from the sample but with a further constraint on build type.
-- The type, tenure, rooms, bedrooms and central heating of the dwellings are not given in census data but are deemed sufficiently important to synthesise.
+- rooms and bedrooms are assigned randomly from a sample of occupied households in the same area with the same build type.
 - Composition, economic stats and ethnicity are __unknown__.
 - No cars.
 
@@ -248,17 +249,17 @@ DONE
 
 The [output file](example/synHouseholds.csv) looks like this:
 
-| |Area|LC4402_C_TYPACCOM|QS420EW_CELL|LC4402_C_TENHUK11|LC4408_C_AHTHUK11|LC4404EW_C_SIZHUK11|LC4404EW_C_ROOMS|LC4405EW_C_BEDROOMS|LC4408EW_C_PPBROOMHEW11|LC4402_C_CENHEATHUK11|LC4601EW_C_ECOPUK11|LC4202EW_C_ETHHUK11|LC4202EW_C_CARSNO
-|-|----|-----------------|------------|-----------------|-----------------|-------------------|----------------|-------------------|-----------------------|---------------------|-------------------|-------------------|-----------------
-|0|E00000001|5|-2|2|1|1|2|2|1|2|5|2|1
-|1|E00000001|5|-2|2|1|1|3|3|1|2|5|2|1
-|2|E00000001|5|-2|2|1|1|4|3|1|2|8|2|2
-|3|E00000001|5|-2|2|1|1|5|1|2|2|7|2|2
-|4|E00000001|5|-2|2|1|1|5|1|2|2|14|2|1
-|5|E00000001|5|-2|2|1|1|5|2|1|2|14|2|1
-|6|E00000001|5|-2|2|1|1|5|2|1|2|14|2|1
-|7|E00000001|5|-2|2|1|1|5|2|1|2|5|2|2
-|8|E00000001|5|-2|2|1|1|5|2|1|1|8|6|2
+| |Area|LC4402_C_TYPACCOM|QS420EW_CELL|LC4402_C_TENHUK11|LC4408_C_AHTHUK11|CommunalSize|LC4404EW_C_SIZHUK11|LC4404EW_C_ROOMS|LC4405EW_C_BEDROOMS|LC4408EW_C_PPBROOMHEW11|LC4402_C_CENHEATHUK11|LC4601EW_C_ECOPUK11|LC4202EW_C_ETHHUK11|LC4202EW_C_CARSNO
+|-|----|-----------------|------------|-----------------|-----------------|-----------------|-------------------|----------------|-------------------|-----------------------|---------------------|-------------------|-------------------|-----------------
+0|E00000001|5|-2|2|1|-2|1|2|2|1|2|14|4|2
+1|E00000001|5|-2|2|1|-2|1|3|3|1|2|5|2|2
+2|E00000001|5|-2|2|1|-2|1|4|3|1|2|5|2|2
+3|E00000001|5|-2|2|1|-2|1|5|1|2|2|14|2|2
+4|E00000001|5|-2|2|1|-2|1|5|1|2|2|5|2|2
+5|E00000001|5|-2|2|1|-2|1|5|2|1|2|5|2|1
+6|E00000001|5|-2|2|1|-2|1|5|2|1|2|7|2|2
+7|E00000001|5|-2|2|1|-2|1|5|2|1|2|5|2|1
+8|E00000001|5|-2|2|1|-2|1|5|2|1|2|5|2|2
 ...
 
 And there are ten metadata files - one for each census table - which can be used to describe the numeric category values:
