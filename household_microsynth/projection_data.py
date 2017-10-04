@@ -2,9 +2,14 @@
 # Household projection
 
 import io
+import os
 import datetime
 from dateutil.relativedelta import relativedelta
 from urllib import request
+from urllib.error import HTTPError
+from urllib.error import URLError
+from urllib.parse import urlencode
+from socket import timeout
 import pandas as pd
 
 
@@ -23,12 +28,22 @@ def get_newbuilds(month, year):
       + "&nb%5B%5D=true&ptype%5B%5D=lrcommon%3Adetached&ptype%5B%5D=lrcommon%3Asemi-detached&ptype%5B%5D=lrcommon%3Aterraced" \
       + "&ptype%5B%5D=lrcommon%3Aflat-maisonette&tc%5B%5D=ppd%3AstandardPricePaidTransaction&tc%5B%5D=ppd%3AadditionalPricePaidTransaction"
 
-  #print(start_date.strftime("%d+%B+%Y") + " to " + end_date.strftime("%d+%B+%Y"))
+  # check cache for previously downloaded data
+  rawdata_file = "./raw" + start_date.isoformat() + "_" + end_date.isoformat() + ".csv"
+  if os.path.isfile(rawdata_file):
+    print("using local data: " + rawdata_file)
+    newbuild_data = pd.read_csv(rawdata_file)
+  else:
+    print("downloading data to: " + rawdata_file)
+    try:
+      response = request.urlopen(url)
+    except (HTTPError, URLError, timeout) as error:
+      print('ERROR: ', error, ' accessing', url)
 
-  response = request.urlopen(url)
+    newbuild_data = pd.read_csv(io.StringIO(response.read().decode('utf-8')))
+    newbuild_data = newbuild_data.fillna('')
 
-  newbuild_data = pd.read_csv(io.StringIO(response.read().decode('utf-8')))
-  newbuild_data = newbuild_data.fillna('')
+    newbuild_data.to_csv(rawdata_file)
 
   return newbuild_data
 
@@ -42,7 +57,7 @@ def batch_newbuilds(start_year, end_year):
   
   # inclusive range
   for y in range(start_year, end_year+1):
-    for m in range(1, 12):
+    for m in range(1, 13):
       # start_date = datetime.date(y,m,1)
  
       # end_date = start_date + relativedelta(months=1, days=-1)
@@ -86,6 +101,3 @@ def batch_newbuilds(start_year, end_year):
       output_df.to_csv("./newbuilds_" + str(y) + format(m, "02") + ".csv")  
 
 
-if __name__ == "__main__":
-
-  batch_newbuilds(2016, 2016)
