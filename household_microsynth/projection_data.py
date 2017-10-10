@@ -99,8 +99,6 @@ def batch_newbuilds(start_year, end_year):
           print("Zero entries found for postcode " + str(postcode))
           lsoa_code = "UNKNOWN"
         else:
-#          print(postcode)
-#          print(pc_match)
           lsoa_code = pc_match["LowerSuperOutputAreaCode"].iloc[0]
 
         build_type = buildtype_lookup[newbuilds.at[i, "property_type"]]
