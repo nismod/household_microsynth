@@ -5,5 +5,5 @@ dist/
 cache/
 .eggs/
 *.tsv
+*.csv
 
-synHouseholds.csv

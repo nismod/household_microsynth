@@ -39,6 +39,7 @@ def get_newbuilds(month, year):
       response = request.urlopen(url)
     except (HTTPError, URLError, timeout) as error:
       print('ERROR: ', error, ' accessing', url)
+      return
 
     newbuild_data = pd.read_csv(io.StringIO(response.read().decode('utf-8')))
     newbuild_data = newbuild_data.fillna('')
@@ -64,6 +65,11 @@ def batch_newbuilds(start_year, end_year):
       #  datetime.date(2016,7,1)
       # add 1y, subtract 1d
 
+      output_file = "./newbuilds_" + str(y) + format(m, "02") + ".csv"
+      if os.path.isfile(output_file):
+        print("File exists: " + output_file + ", skipping")
+        continue
+
       newbuilds = get_newbuilds(m, y)
       # use this for debugging
       #newbuilds = pd.read_csv("~/newbuilds_test.csv")
@@ -74,10 +80,18 @@ def batch_newbuilds(start_year, end_year):
       #output = pd.DataFrame(columns=output_columns)
       output = { }
 
+
       print(str(y) + "/" + str(m) + ": " + str(len(newbuilds.index)) + " new sales")
       for i in range(0, len(newbuilds.index)):
         postcode = newbuilds.at[i,"postcode"]
-        pc_match = pcdb.loc[(pcdb.Postcode1 == postcode) | (pcdb.Postcode2 == postcode) | (pcdb.Postcode3 == postcode)]
+        #pc_match = pcdb.loc[(pcdb.Postcode1 == postcode) | (pcdb.Postcode2 == postcode) | (pcdb.Postcode3 == postcode)]
+        # this approach might be faster
+        pc_match = pcdb.loc[pcdb.Postcode3 == postcode]
+        if len(pc_match) == 0:
+           pc_match = [pcdb.Postcode2 == postcode]
+        if len(pc_match) == 0:
+           pc_match = [pcdb.Postcode1 == postcode]
+
         if len(pc_match) > 1:
           print("Multiple entries found for postcode " + str(postcode))
           continue
@@ -98,6 +112,6 @@ def batch_newbuilds(start_year, end_year):
       output_df = output_df.fillna(int(0))
       output_df = output_df.astype(int)
       #print(output_df.head())
-      output_df.to_csv("./newbuilds_" + str(y) + format(m, "02") + ".csv")  
+      output_df.to_csv(output_file)  
 
 
