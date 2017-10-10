@@ -88,9 +88,9 @@ def batch_newbuilds(start_year, end_year):
         # this approach might be faster
         pc_match = pcdb.loc[pcdb.Postcode3 == postcode]
         if len(pc_match) == 0:
-           pc_match = [pcdb.Postcode2 == postcode]
+           pc_match = pcdb.loc[pcdb.Postcode2 == postcode]
         if len(pc_match) == 0:
-           pc_match = [pcdb.Postcode1 == postcode]
+           pc_match = pcdb.loc[pcdb.Postcode1 == postcode]
 
         if len(pc_match) > 1:
           print("Multiple entries found for postcode " + str(postcode))
@@ -99,6 +99,8 @@ def batch_newbuilds(start_year, end_year):
           print("Zero entries found for postcode " + str(postcode))
           lsoa_code = "UNKNOWN"
         else:
+#          print(postcode)
+#          print(pc_match)
           lsoa_code = pc_match["LowerSuperOutputAreaCode"].iloc[0]
 
         build_type = buildtype_lookup[newbuilds.at[i, "property_type"]]
