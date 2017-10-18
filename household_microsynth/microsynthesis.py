@@ -95,6 +95,34 @@ class Microsynthesis:
 
       # end area loop
 
+  # run the microsynthesis
+  def run2(self):
+    all_areas = self.lc4402.GEOGRAPHY_CODE.unique()
+    all_occupants = self.lc4404.C_SIZHUK11.unique() # assumes same as msynth.lc4405.C_SIZHUK11
+
+    for area in all_areas:
+      print('.', end='', flush=True)
+
+      # 1. unconstrained usim of type and central heating
+      self.__step1_2(area)
+
+      # 2. constrained usim of rooms and bedrooms
+      self.__step2_2(area, all_occupants)
+
+      # 3. "usim" of composition vs personsPerBedroom
+      self.__step3_2(area)
+
+      # add communal residences
+      self.__add_communal(area)
+
+      # add unoccupied properties
+      self.__add_unoccupied(area)
+
+      # adds rooms and beds based on same dist as occupied households in same area and type
+      self.__add_unoccupied_detail(area)
+
+      # end area loop
+
   # 1. unconstrained usim of type and central heating
   def __step1(self, area, tenure):
 
