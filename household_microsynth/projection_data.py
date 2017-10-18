@@ -14,7 +14,7 @@ import pandas as pd
 
 
 def get_postcode_lookup(filename):
-  return pd.read_csv(filename, sep=";")
+  return pd.read_csv(filename)
 
 # Example URL for downloading new build sales
 # http://landregistry.data.gov.uk/app/ppd/ppd_data.csv?et%5B%5D=lrcommon%3Afreehold&et%5B%5D=lrcommon%3Aleasehold&header=true&limit=all&max_date=31+July+2016&min_date=1+July+2016&nb%5B%5D=true&ptype%5B%5D=lrcommon%3Adetached&ptype%5B%5D=lrcommon%3Asemi-detached&ptype%5B%5D=lrcommon%3Aterraced&ptype%5B%5D=lrcommon%3Aflat-maisonette&tc%5B%5D=ppd%3AstandardPricePaidTransaction&tc%5B%5D=ppd%3AadditionalPricePaidTransaction
@@ -29,7 +29,7 @@ def get_newbuilds(month, year):
       + "&ptype%5B%5D=lrcommon%3Aflat-maisonette&tc%5B%5D=ppd%3AstandardPricePaidTransaction&tc%5B%5D=ppd%3AadditionalPricePaidTransaction"
 
   # check cache for previously downloaded data
-  rawdata_file = "./raw" + start_date.isoformat() + "_" + end_date.isoformat() + ".csv"
+  rawdata_file = "./data/raw" + start_date.isoformat() + "_" + end_date.isoformat() + ".csv"
   if os.path.isfile(rawdata_file):
     print("using local data: " + rawdata_file)
     newbuild_data = pd.read_csv(rawdata_file)
@@ -50,8 +50,7 @@ def get_newbuilds(month, year):
 
 def batch_newbuilds(start_year, end_year):
 
-  pcdb = get_postcode_lookup("~/postcode_lookup_20170921.csv.gz")
-  #print(pcdb.columns.values)
+  pcdb = get_postcode_lookup("./data/postcode_oa_lookup_201708.csv")
 
   # map build type to census codes (see e.g. LC4402EW)
   buildtype_lookup = { "D": "2", "S": "3", "T": "4", "F": "5" }
@@ -65,7 +64,7 @@ def batch_newbuilds(start_year, end_year):
       #  datetime.date(2016,7,1)
       # add 1y, subtract 1d
 
-      output_file = "./newbuilds_" + str(y) + format(m, "02") + ".csv"
+      output_file = "./data/newbuilds_" + str(y) + format(m, "02") + ".csv"
       if os.path.isfile(output_file):
         print("File exists: " + output_file + ", skipping")
         continue
@@ -86,11 +85,7 @@ def batch_newbuilds(start_year, end_year):
         postcode = newbuilds.at[i,"postcode"]
         #pc_match = pcdb.loc[(pcdb.Postcode1 == postcode) | (pcdb.Postcode2 == postcode) | (pcdb.Postcode3 == postcode)]
         # this approach might be faster
-        pc_match = pcdb.loc[pcdb.Postcode3 == postcode]
-        if len(pc_match) == 0:
-           pc_match = pcdb.loc[pcdb.Postcode2 == postcode]
-        if len(pc_match) == 0:
-           pc_match = pcdb.loc[pcdb.Postcode1 == postcode]
+        pc_match = pcdb.loc[pcdb.Postcode == postcode]
 
         if len(pc_match) > 1:
           print("Multiple entries found for postcode " + str(postcode))
@@ -99,7 +94,7 @@ def batch_newbuilds(start_year, end_year):
           print("Zero entries found for postcode " + str(postcode))
           lsoa_code = "UNKNOWN"
         else:
-          lsoa_code = pc_match["LowerSuperOutputAreaCode"].iloc[0]
+          lsoa_code = pc_match["OA11"].iloc[0]
 
         build_type = buildtype_lookup[newbuilds.at[i, "property_type"]]
         if not(lsoa_code in output):
