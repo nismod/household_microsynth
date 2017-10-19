@@ -4,6 +4,42 @@ import numpy as np
 import pandas as pd
 
 
+
+# econ table sometimes has a slightly lower (1 or 2) count, need to adjust ***at the correct tenure***
+def adjust(table, consistent_table):
+  for t in table.C_TENHUK11.unique():
+    consistent_sum = consistent_table[consistent_table.C_TENHUK11 == t].OBS_VALUE.sum()
+    sum = table[table.C_TENHUK11 == t].OBS_VALUE.sum()
+    if sum < consistent_sum:
+      print("adjusting table tenure", str(t), sum, "->", consistent_sum)
+      # randomly increment values (better to scale proportionally)
+      r = len(table[table.C_TENHUK11 == t].OBS_VALUE)
+      for i in range(sum, consistent_sum):
+        index = table[table.C_TENHUK11 == t].OBS_VALUE.index.values
+        #print()
+        table.OBS_VALUE.at[index[randint(0, r-1)]] += 1
+  return table
+
+def unmap(values, mapping):
+  """
+  Converts values (census category enumerations)
+  """
+  i = 0
+  for m in mapping:
+    values.replace(to_replace=m, value=i, inplace=True)
+    i += 1
+
+def remap(values, mapping):
+  for i in range(0,len(mapping)):
+    values.replace(to_replace=i, value=mapping[i], inplace=True)
+
+def unlistify(table, columns, sizes, values):
+  pivot = table.pivot_table(columns=columns, values=values)
+  # order must be same as column order above
+  a = np.zeros(sizes, dtype=int)
+  a[pivot.index.labels] = pivot.values.flat
+  return a
+
 def people_per_bedroom(people, bedrooms):
   ppbed = people / bedrooms
   if ppbed <= 0.5:
