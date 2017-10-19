@@ -3,7 +3,7 @@
 build/
 dist/
 cache/
+data/
 .eggs/
-*.tsv
-*.csv
 
+.Rproj.user

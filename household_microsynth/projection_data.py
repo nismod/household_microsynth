@@ -58,11 +58,6 @@ def batch_newbuilds(start_year, end_year):
   # inclusive range
   for y in range(start_year, end_year+1):
     for m in range(1, 13):
-      # start_date = datetime.date(y,m,1)
- 
-      # end_date = start_date + relativedelta(months=1, days=-1)
-      #  datetime.date(2016,7,1)
-      # add 1y, subtract 1d
 
       output_file = "./data/newbuilds_" + str(y) + format(m, "02") + ".csv"
       if os.path.isfile(output_file):
@@ -75,34 +70,30 @@ def batch_newbuilds(start_year, end_year):
       # empty values are empty strings, not (the default) NaN
       #print(newbuilds.head())
 
-      #output_columns = ["Area", "BuildType", "Count"]
-      #output = pd.DataFrame(columns=output_columns)
       output = { }
-
 
       print(str(y) + "/" + str(m) + ": " + str(len(newbuilds.index)) + " new sales")
       for i in range(0, len(newbuilds.index)):
         postcode = newbuilds.at[i,"postcode"]
-        #pc_match = pcdb.loc[(pcdb.Postcode1 == postcode) | (pcdb.Postcode2 == postcode) | (pcdb.Postcode3 == postcode)]
-        # this approach might be faster
-        pc_match = pcdb.loc[pcdb.Postcode == postcode]
+        pc_match = pcdb.ix[pcdb.Postcode == postcode]
 
         if len(pc_match) > 1:
           print("Multiple entries found for postcode " + str(postcode))
           continue
         elif len(pc_match) == 0:
           print("Zero entries found for postcode " + str(postcode))
-          lsoa_code = "UNKNOWN"
+          # use postcode district if available to at least get LAD?
+          area_code = "UNKNOWN"
         else:
-          lsoa_code = pc_match["OA11"].iloc[0]
+          area_code = pc_match["OA11"].iloc[0]
 
         build_type = buildtype_lookup[newbuilds.at[i, "property_type"]]
-        if not(lsoa_code in output):
-          output[lsoa_code] = { build_type : 1 }
-        elif not(build_type in output[lsoa_code]):
-          output[lsoa_code][build_type] = 1 
+        if not(area_code in output):
+          output[area_code] = { build_type : 1 }
+        elif not(build_type in output[area_code]):
+          output[area_code][build_type] = 1 
         else:
-          output[lsoa_code][build_type] += 1 
+          output[area_code][build_type] += 1 
       output_df = pd.DataFrame.from_dict(output, orient="index",dtype="int64")
       output_df = output_df.fillna(int(0))
       output_df = output_df.astype(int)
