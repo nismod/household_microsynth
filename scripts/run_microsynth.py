@@ -12,12 +12,6 @@ import household_microsynth.utils as Utils
 assert humanleague.version() > 1
 CACHE_DIR = "./cache"
 
-# # Set country or local authority/ies here
-# REGION = "City of London"
-# #REGION = "Newcastle upon Tyne"
-# # Set resolution LA/MSOA/LSOA/OA
-# RESOLUTION = Api.Nomisweb.OA
-
 # The microsynthesis makes use of the following tables:
 # LC4402EW - Accommodation type by type of central heating in household by tenure
 # LC4404EW - Tenure by household size by number of rooms
@@ -33,7 +27,7 @@ CACHE_DIR = "./cache"
 
 def main(region, resolution):
 
-  # start timing
+  # # start timing
   start_time = time.time()
 
   print("Microsynthesis region: ", region)
@@ -76,11 +70,11 @@ def main(region, resolution):
   print("Number of geographical areas: ", len(msynth.lc4402.GEOGRAPHY_CODE.unique()))
 
   # generate the population
-  #try:
-  msynth.run2()
-  # except Exception as e:
-  #   print(e)
-  #   return
+  try:
+    msynth.run()
+  except Exception as e:
+    print(e)
+    return
 
   print("Done. Exec time(s): ", time.time() - start_time)
 

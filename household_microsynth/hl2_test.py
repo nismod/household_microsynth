@@ -8,7 +8,7 @@ import household_microsynth.utils as Utils
 
 api = Api.Nomisweb("./cache")
 
-resolution = api.GeoCodeLookup["MSOA11"]
+resolution = api.GeoCodeLookup["OA11"]
 
 lad_codes = api.get_lad_codes("Newcastle upon Tyne")
 
@@ -86,7 +86,7 @@ for r in range(0,6):
     s[:,r,:,b] = 0
 
 #print (len(area_map))
-for area in area_map:
+for area in area_map[10:]:
   tenure_rooms_occ = lc4404.loc[lc4404.GEOGRAPHY_CODE == area].copy()
   # unmap indices
 # TODO might be quicker to unmap the entire table upfront
