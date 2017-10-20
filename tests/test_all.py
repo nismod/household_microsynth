@@ -9,7 +9,7 @@ class Test(TestCase):
   # City of London MSOA (one geog area)
   def test1(self):
     region = "City of London"
-    resolution = "MSOA"
+    resolution = "MSOA11"
     cache = "./cache"
     microsynth = Households.Microsynthesis(region, resolution, cache)
     num_dwellings = 5530

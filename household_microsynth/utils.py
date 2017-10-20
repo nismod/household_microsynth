@@ -2,8 +2,7 @@
 
 import numpy as np
 import pandas as pd
-
-
+from random import randint
 
 # econ table sometimes has a slightly lower (1 or 2) count, need to adjust ***at the correct tenure***
 def adjust(table, consistent_table):
@@ -29,9 +28,14 @@ def unmap(values, mapping):
     values.replace(to_replace=m, value=i, inplace=True)
     i += 1
 
-def remap(values, mapping):
-  for i in range(0,len(mapping)):
-    values.replace(to_replace=i, value=mapping[i], inplace=True)
+def remap(indices, mapping):
+  """
+  Converts array of index values back into category values
+  """
+  values = []
+  for i in range(0,len(indices)):
+    values.append(mapping[indices[i]])
+  return values
 
 def unlistify(table, columns, sizes, values):
   pivot = table.pivot_table(columns=columns, values=values)

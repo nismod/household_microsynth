@@ -9,7 +9,7 @@ import humanleague
 import household_microsynth.microsynthesis as Microsynthesiser
 import household_microsynth.utils as Utils
 
-assert humanleague.version() == 1
+assert humanleague.version() > 1
 CACHE_DIR = "./cache"
 
 # # Set country or local authority/ies here
@@ -76,11 +76,11 @@ def main(region, resolution):
   print("Number of geographical areas: ", len(msynth.lc4402.GEOGRAPHY_CODE.unique()))
 
   # generate the population
-  try:
-    msynth.run()
-  except Exception as e:
-    print(e)
-    return
+  #try:
+  msynth.run2()
+  # except Exception as e:
+  #   print(e)
+  #   return
 
   print("Done. Exec time(s): ", time.time() - start_time)
 
