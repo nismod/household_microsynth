@@ -2,6 +2,8 @@
 
 import numpy as np
 import pandas as pd
+from random import randint
+
 import ukcensusapi.Nomisweb as Api
 import humanleague
 import household_microsynth.utils as Utils
@@ -82,8 +84,8 @@ class Microsynthesis:
 
   # run the microsynthesis
   def run2(self):
-    #                                           DIM
-    area_map = self.lc4404.GEOGRAPHY_CODE.unique() 
+
+    area_map = self.lc4404.GEOGRAPHY_CODE.unique()
 
     # construct seed disallowing states where B>R]
     #                           T  R  O  B  X  (X=household type)
@@ -107,14 +109,11 @@ class Microsynthesis:
       # 1. households
       self.__add_households(area)
 
-      # # add communal residences
-      # self.__add_communal(area)
+      # add communal residences
+      self.__add_communal2(area)
 
       # # add unoccupied properties
-      # self.__add_unoccupied(area)
-
-      # # adds rooms and beds based on same dist as occupied households in same area and type
-      # self.__add_unoccupied_detail(area)
+      self.__add_unoccupied2(area)
 
       # end area loop
     self.dwellings.to_csv("./hh.csv")
@@ -229,9 +228,122 @@ class Microsynthesis:
     #print(chunk.head())
     self.dwellings = self.dwellings.append(chunk)
 
-    # categories = ["Area", "LC4402_C_TYPACCOM", "QS420EW_CELL", "LC4402_C_TENHUK11", "LC4408_C_AHTHUK11", "CommunalSize",
-    #               "LC4404EW_C_SIZHUK11", "LC4404EW_C_ROOMS", "LC4405EW_C_BEDROOMS", "LC4408EW_C_PPBROOMHEW11",
-    #               "LC4402_C_CENHEATHUK11", "LC4601EW_C_ECOPUK11", "LC4202EW_C_ETHHUK11", "LC4202EW_C_CARSNO"]
+
+  def __add_communal2(self, area):
+
+    # here we simply enumerate the census counts - no microsynthesis required
+
+    area_communal = self.communal.loc[(self.communal.GEOGRAPHY_CODE == area) & (self.communal.OBS_VALUE > 0)]
+
+    #print(area_communal)
+
+    chunk = pd.DataFrame(columns=self.dwellings.columns.values)
+    chunk.Area = np.repeat(area, len(area_communal))
+    chunk.LC4402_C_TENHUK11 = np.repeat(self.NOTAPPLICABLE, len(area_communal))
+    chunk.LC4404EW_C_ROOMS = np.repeat(self.UNKNOWN, len(area_communal))
+    chunk.LC4404EW_C_SIZHUK11 = np.repeat(self.UNKNOWN, len(area_communal))
+    chunk.LC4405EW_C_BEDROOMS = np.repeat(self.UNKNOWN, len(area_communal))
+    chunk.LC4408_C_AHTHUK11 = np.repeat(5, len(area_communal)) # communal implies multi-person household
+    chunk.LC4402_C_CENHEATHUK11 = np.repeat(2, len(area_communal)) # assume all communal are centrally heated
+    chunk.LC4402_C_TYPACCOM = np.repeat(self.NOTAPPLICABLE, len(area_communal))
+    chunk.LC4202EW_C_ETHHUK11 = np.repeat(5, len(area_communal)) # mixed/multiple
+    chunk.LC4202EW_C_CARSNO = np.repeat(1, len(area_communal)) # no cars (blanket assumption)
+
+    index = 0
+    #print(area, len(area_communal))
+    for i in range(0, len(area_communal)):
+      # average occupants per establishment - integerised (special case when zero occupants)
+      establishments = area_communal.at[area_communal.index[i], "OBS_VALUE"]
+      occupants = area_communal.at[area_communal.index[i], "CommunalSize"]
+      if establishments == 1:
+        occ_array = [occupants]
+      else:
+        # TODO pemit zero total in prob2IntFreq to avoid this branch
+        if occupants:
+          occ_array = humanleague.prob2IntFreq(np.full(establishments, 1.0 / establishments), occupants)["freq"]
+        else:
+          occ_array = np.zeros(establishments)
+      for j in range(0, establishments):
+        chunk.QS420EW_CELL.at[index] = area_communal.at[area_communal.index[i], "CELL"]
+        chunk.CommunalSize.at[index] = occ_array[j]
+        chunk.LC4601EW_C_ECOPUK11.at[index] = Utils.communal_economic_status(area_communal.at[area_communal.index[i], "CELL"])
+        index += 1          
+
+    #print(chunk.head())
+    self.dwellings = self.dwellings.append(chunk)
+
+
+  # unoccupied, should be one entry per area
+  # sample from the occupied houses 
+  def __add_unoccupied2(self, area):
+    unocc = self.ks401.loc[(self.ks401.GEOGRAPHY_CODE == area) & (self.ks401.CELL == 6)]
+    assert len(unocc == 1)
+    n_unocc = unocc.at[unocc.index[0], "OBS_VALUE"]
+    print(n_unocc)
+
+    chunk = pd.DataFrame(columns=self.dwellings.columns.values)
+    chunk.Area = np.repeat(area, n_unocc)
+    chunk.LC4402_C_TENHUK11 = np.repeat(self.UNKNOWN, n_unocc)
+    chunk.LC4404EW_C_SIZHUK11 = np.repeat(0, n_unocc)
+    chunk.LC4408_C_AHTHUK11 = np.repeat(self.UNKNOWN, n_unocc)
+    chunk.LC4402_C_TYPACCOM = np.repeat(self.NOTAPPLICABLE, n_unocc)
+    chunk.LC4202EW_C_ETHHUK11 = np.repeat(self.UNKNOWN, n_unocc) # mixed/multiple
+    chunk.LC4202EW_C_CARSNO = np.repeat(1, n_unocc) # no cars 
+
+    occ = self.dwellings.loc[(self.dwellings.Area == area) & (self.dwellings.QS420EW_CELL == self.NOTAPPLICABLE)]
+
+    for i in range(0, n_unocc):
+      s = occ.iloc[occ.index.values[randint(0, len(occ)-1)]]
+
+      chunk.LC4404EW_C_ROOMS.at[i] = s.LC4404EW_C_ROOMS
+      chunk.LC4405EW_C_BEDROOMS.at[i] = s.LC4405EW_C_BEDROOMS
+      chunk.LC4402_C_CENHEATHUK11.at[i] = s.LC4402_C_CENHEATHUK11
+      # chunk.LC4402_C_TYPACCOM[i] = np.repeat(self.NOTAPPLICABLE, len(unocc))
+      # chunk.LC4202EW_C_ETHHUK11 = np.repeat(5, len(unocc)) # mixed/multiple
+      # chunk.LC4202EW_C_CARSNO = np.repeat(1, len(unocc)) # no cars (blanket assumption)
+
+    #print(chunk)
+    self.dwellings = self.dwellings.append(chunk)
+
+
+#     if n_unocc:
+#       # type marginal
+#       type_tenure_ch = self.lc4402.loc[self.lc4402.GEOGRAPHY_CODE == area]
+#       type_marginal = type_tenure_ch.groupby("C_TYPACCOM").agg({"OBS_VALUE":np.sum})["OBS_VALUE"].as_matrix()
+#       # tenure marginal
+#       tenure_marginal = type_tenure_ch.groupby("C_TENHUK11").agg({"OBS_VALUE":np.sum})["OBS_VALUE"].as_matrix()
+#       # central heating marginal
+#       centheat_marginal = type_tenure_ch.groupby("C_CENHEATHUK11").agg({"OBS_VALUE":np.sum})["OBS_VALUE"].as_matrix()
+
+#       # TODO return np.array...
+#       uusim = humanleague.synthPop([type_marginal, tenure_marginal, centheat_marginal])
+#       assert uusim["conv"]
+#       # randomly sample n_unocc values
+#       occ_pop = pd.DataFrame(np.array(uusim["result"]).T, columns=["LC4402_C_TYPACCOM", "LC4402_C_TENHUK11", "LC4402_C_CENHEATHUK11"])
+#       # use without-replacement sampling if possible
+#       unocc_pop = occ_pop.sample(n=n_unocc, replace=len(occ_pop) < n_unocc)
+#       # we now potentially have duplicate index values which can cause problems indexing
+# #      print(unocc_pop.head(10))
+#       unocc_pop = unocc_pop.reset_index(drop=True)
+# #      print(unocc_pop.head(10))
+
+#       for j in range(0, n_unocc):
+#         self.dwellings.at[self.index, "Area"] = area
+#         self.dwellings.at[self.index, "LC4402_C_TYPACCOM"] = self.type_index[unocc_pop.at[j, "LC4402_C_TYPACCOM"]]
+#         self.dwellings.at[self.index, "QS420EW_CELL"] = self.NOTAPPLICABLE
+#         self.dwellings.at[self.index, "LC4402_C_TENHUK11"] = self.tenure_index[unocc_pop.at[j, "LC4402_C_TENHUK11"]]
+#         self.dwellings.at[self.index, "LC4404EW_C_SIZHUK11"] = 0
+#         self.dwellings.at[self.index, "CommunalSize"] = self.NOTAPPLICABLE
+# #        # Rooms/beds are done at the end (so we can sample dwellings)
+#         self.dwellings.at[self.index, "LC4404EW_C_ROOMS"] = 0
+#         self.dwellings.at[self.index, "LC4405EW_C_BEDROOMS"] = 0
+#         self.dwellings.at[self.index, "LC4408_C_AHTHUK11"] = self.UNKNOWN
+#         self.dwellings.at[self.index, "LC4408EW_C_PPBROOMHEW11"] = 1
+#         self.dwellings.at[self.index, "LC4402_C_CENHEATHUK11"] = self.ch_index[unocc_pop.at[j, "LC4402_C_CENHEATHUK11"]]
+#         self.dwellings.at[self.index, "LC4601EW_C_ECOPUK11"] = self.UNKNOWN
+#         self.dwellings.at[self.index, "LC4202EW_C_ETHHUK11"] = self.UNKNOWN
+#         self.dwellings.at[self.index, "LC4202EW_C_CARSNO"] = 1 # no cars (no people)
+#         self.index += 1
 
   # 1. unconstrained usim of type and central heating
   def __step1(self, area, tenure):
@@ -563,6 +675,6 @@ class Microsynthesis:
     qs421 = self.api.get_data("QS421EW", "NM_553_1", query_params) # people
 
     # merge the two tables (so we have establishment and people counts)
-    self.communal["LC4404EW_C_SIZHUK11"] = qs421.OBS_VALUE
+    self.communal["CommunalSize"] = qs421.OBS_VALUE
     
 
