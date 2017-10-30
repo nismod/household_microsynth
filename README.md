@@ -1,3 +1,5 @@
+*[this documentation refers to a non-current revision of this software and will be updated accordingly]*
+
 # Household Microsynthesis
 
 A python package for microsynthesising household poulations from census data, including communal and unoccupied residences.
