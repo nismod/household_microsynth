@@ -6,3 +6,4 @@ cache/
 .eggs/
 tmpdata/
 .Rproj.user
+apikey.sh
