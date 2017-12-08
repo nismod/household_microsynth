@@ -32,8 +32,8 @@ def main(regioncode, resolution):
 
   region = Utils.get_region_name(regioncode)
 
-  print("Microsynthesis region: ", regioncode, " - ", region)
-  print("Microsynthesis resolution: ", resolution)
+  print("Microsynthesis region:", regioncode, "-", region)
+  print("Microsynthesis resolution:", resolution)
   # init microsynthesis
   try:
     msynth = Microsynthesiser.Microsynthesis(region, resolution, CACHE_DIR)
