@@ -2,12 +2,12 @@
 
 # ensure appropriate conda env has been activated
 
-if [-z "$NOMIS_API_KEY" ]; then
+if [ -z "$NOMIS_API_KEY" ]; then
   echo NOMIS_API_KEY is not set, exiting
   exit 1
 fi
 
-if [-z "$REGION" ]; then
+if [ -z "$REGION" ]; then
   echo REGION is not set, exiting
   exit 1
 fi

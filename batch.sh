@@ -38,12 +38,14 @@ qsub_params="-l h_rt=4:0:0"
 resolution="OA11"
 
 for region in $regions; do
-  outfile="hh_$region_$resolution.csv"
-  if [ ! -f outfile ]; then
+  outfile="hh_"$region"_"$resolution".csv"
+  if [ ! -f $outfile ]; then
     export REGION=$region
     echo Submitting job for $REGION
-    echo qsub $qsub_params run.sh
-    sleep 1
+    qsub $qsub_params run.sh
+    sleep 10
+  else
+    echo $region done, not resubmitting
   fi
 done
 
