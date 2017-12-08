@@ -3,7 +3,6 @@
 build/
 dist/
 cache/
-data/
 .eggs/
-
+tmpdata/
 .Rproj.user

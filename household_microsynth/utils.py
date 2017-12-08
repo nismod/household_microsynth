@@ -108,6 +108,20 @@ def communal_economic_status(communal_type):
   }
   return communal_econ_map[communal_type]
 
+# TODO more to UKCensusAPI? add support for non-LAD regions
+def get_region_name(region_code):
+  lookup = pd.read_csv("./data/UK_LADcodes_201612.csv", encoding='utf-8')
+  # workaround for pandas bug:
+  # >>> lookup.columns.values
+  # array(['\ufeffLAD16CD', 'LAD16CDO', 'LAD16NM', 'FID'], dtype=object)
+
+  # its ridiculously complicated to look up a value
+  row = lookup.loc[lookup.LAD16CD == region_code]
+  if row.shape[0] == 1:
+    return row["LAD16NM"].values[0]
+  else: # something went wrong
+    return ""
+
 # TODO asserts are not idea here as it will bale immediately
 def check(msynth, total_occ_dwellings, total_households, total_communal, total_household_poplb, total_communal_pop):
   # correct number of dwellings

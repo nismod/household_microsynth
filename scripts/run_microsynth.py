@@ -25,12 +25,14 @@ CACHE_DIR = "./cache"
 # LC4601EW - Tenure by economic activity by age - Household Reference Persons
 # TODO: differentiate between purpose-built and converted flats?
 
-def main(region, resolution):
+def main(regioncode, resolution):
 
   # # start timing
   start_time = time.time()
 
-  print("Microsynthesis region: ", region)
+  region = Utils.get_region_name(regioncode)
+
+  print("Microsynthesis region: ", regioncode, " - ", region)
   print("Microsynthesis resolution: ", resolution)
   # init microsynthesis
   try:
@@ -84,16 +86,15 @@ def main(region, resolution):
     print("ok")
   else:
     print("failed")
-  output = "./synHouseholds.csv"
+  output = "./hh_" + regioncode + "_" + resolution + ".csv"
   print("Writing synthetic population to", output)
   msynth.dwellings.to_csv(output)
   print("DONE")
 
 if __name__ == "__main__":
   if len(sys.argv) != 3:
-    print("usage:", sys.argv[0], "<region(s)> <resolution>")
-    print("e.g:", sys.argv[0], "\"Newcastle upon Tyne\" OA")
-    print("    ", sys.argv[0], "\"Leeds, Bradford\" MSOA")
+    print("usage:", sys.argv[0], "<region> <resolution>")
+    print("e.g:", sys.argv[0], "E09000001 OA11")
   else:
     REGION = sys.argv[1]
     RESOLUTION = sys.argv[2]
