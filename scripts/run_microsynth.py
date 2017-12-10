@@ -84,7 +84,7 @@ def main(region, resolution):
     print("ok")
   else:
     print("failed")
-  output = "./hh_" + regioncode + "_" + resolution + ".csv"
+  output = "./hh_" + region + "_" + resolution + ".csv"
   print("Writing synthetic population to", output)
   msynth.dwellings.to_csv(output)
   print("DONE")
