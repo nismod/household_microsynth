@@ -11,7 +11,7 @@ class Test(TestCase):
     region = "E09000001"
     resolution = "MSOA11"
     cache = "./cache"
-    microsynth = Households.Microsynthesis(Utils.get_region_name(region), resolution, cache)
+    microsynth = Households.Microsynthesis(region, resolution, cache)
     num_dwellings = 5530
     num_occ_dwellings = 4385
     num_communal = 42

@@ -25,14 +25,12 @@ CACHE_DIR = "./cache"
 # LC4601EW - Tenure by economic activity by age - Household Reference Persons
 # TODO: differentiate between purpose-built and converted flats?
 
-def main(regioncode, resolution):
+def main(region, resolution):
 
   # # start timing
   start_time = time.time()
 
-  region = Utils.get_region_name(regioncode)
-
-  print("Microsynthesis region:", regioncode, "-", region)
+  print("Microsynthesis region:", region)
   print("Microsynthesis resolution:", resolution)
   # init microsynthesis
   try:
