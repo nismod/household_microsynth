@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [ ! -f ./apikey.sh ]; then
+  echo "api key not found. Please specify your Nomisweb API key in ./apikey.sh, e.g.:"
+  echo "export NOMIS_API_KEY=0x0123456789abcdef0123456789abcdef01234567"
+  exit 1
+fi
 . ./apikey.sh
 
 source activate testenv1
@@ -32,10 +37,10 @@ E09000022 E09000023 E09000024 E09000025 E09000026 E09000027 E09000028 E09000029 
 W06000004 W06000005 W06000006 W06000008 W06000009 W06000010 W06000011 W06000012 W06000013 W06000014 W06000015 W06000016 W06000018 W06000019 W06000020 \
 W06000021 W06000022 W06000023 W06000024"
 
-
-qsub_params="-l h_rt=8:0:0"
-
 resolution="OA11"
+
+# max run time (NB Birmingham takes longest at ~6h)
+qsub_params="-l h_rt=8:0:0"
 
 for region in $regions; do
   outfile="hh_"$region"_"$resolution".csv"

@@ -1,4 +1,4 @@
-*[this documentation refers to a non-current revision of this software and will be updated accordingly]*
+*[this documentation is in the process of being updated to reflect the current codebase...]*
 
 # Household Microsynthesis
 
@@ -24,9 +24,9 @@ pip3 install git+git://github.com/virgesmith/UKCensusAPI.git
 ```
 - [humanleague](https://github.com/virgesmith/humanleague)
 ```
-pip3 install git+git://github.com/virgesmith/humanleague.git@1.0.1
+pip3 install git+git://github.com/virgesmith/humanleague.git
 ```
-NB Ensure you install the version 1.0.1 of humanleague. Later versions have breaking changes and/or are under heavy development.
+NB Ensure you install humanleague version 2 or higher - this package uses features that are not available in earlier versions.
 
 ### Installation and Testing
 ```
@@ -38,10 +38,11 @@ NB Ensure you install the version 1.0.1 of humanleague. Later versions have brea
 ```
 scripts/run_microsynth.py <region(s)> <resolution>
 ```
-where region can be a one or more local authorities (or one of England, EnglandWales, GB, UK) and resolution can be one of: LA, MSOA, LSOA, OA. If there are spaces in the former, enclose the argument in quotes, e.g.
+where region can be a one or more local authorities (or one of England, EnglandWales, GB, UK), specified by either name or ONS/GSS code (e.g. E09000001). If there are spaces in the former, enclose the argument in quotes, e.g.
 ```
-scripts/run_microsynth.py "City of London" OA
+scripts/run_microsynth.py "City of London" OA11
 ```
+Resolution can be one of: LA, MSOA11, LSOA11, OA11. 
 
 # Overview
 

@@ -4,6 +4,6 @@ build/
 dist/
 cache/
 .eggs/
-tmpdata/
+data/
 .Rproj.user
 apikey.sh

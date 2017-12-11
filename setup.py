@@ -7,7 +7,7 @@ def readme():
     return f.read()
 
 setup(name='household_microsynth',
-  version='0.1',
+  version='0.0.1',
   description='Household microsynthesis',
   long_description=readme(),
   url='https://github.com/nismod/household_microsynth',
@@ -17,7 +17,7 @@ setup(name='household_microsynth',
   packages=['household_microsynth'],
   zip_safe=False,
   install_requires=['distutils_pytest', 'humanleague', 'ukcensusapi'],
-  dependency_links=['git+git://github.com/virgesmith/humanleague.git#egg=humanleague-1.0',
+  dependency_links=['git+git://github.com/virgesmith/humanleague.git#egg=humanleague',
                     'git+git://github.com/virgesmith/UKCensusAPI.git#egg=ukcensusapi'],
   test_suite='nose.collector',
   tests_require=['nose'],
