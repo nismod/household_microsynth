@@ -36,8 +36,8 @@ def remap(indices, mapping):
     values.append(mapping[indices[i]])
   return values
 
-def unlistify(table, columns, sizes, values):
-  pivot = table.pivot_table(columns=columns, values=values)
+def unlistify(table, cols, sizes, vals):
+  pivot = table.pivot_table(index=cols, values=vals)
   # order must be same as column order above
   a = np.zeros(sizes, dtype=int)
   a[pivot.index.labels] = pivot.values.flat
