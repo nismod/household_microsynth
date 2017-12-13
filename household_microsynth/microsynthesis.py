@@ -194,6 +194,9 @@ class Microsynthesis:
     # here we simply enumerate the census counts - no microsynthesis required
 
     area_communal = self.communal.loc[(self.communal.GEOGRAPHY_CODE == area) & (self.communal.OBS_VALUE > 0)]
+    if len(area_communal) == 0:
+      return
+
     num_communal = area_communal.OBS_VALUE.sum()
 
     chunk = pd.DataFrame(columns=self.dwellings.columns.values)
