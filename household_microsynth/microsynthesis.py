@@ -28,7 +28,7 @@ class Microsynthesis:
     # initialise table and index
     categories = ["Area", "LC4402_C_TYPACCOM", "QS420EW_CELL", "LC4402_C_TENHUK11", "LC4408_C_AHTHUK11", "CommunalSize",
                   "LC4404EW_C_SIZHUK11", "LC4404EW_C_ROOMS", "LC4405EW_C_BEDROOMS", "LC4408EW_C_PPBROOMHEW11",
-                  "LC4402_C_CENHEATHUK11", "LC4601EW_C_ECOPUK11", "LC4202EW_C_ETHHUK11", "LC4202EW_C_CARSNO"]
+                  "LC4402_C_CENHEATHUK11", "LC4605EW_C_NSSEC", "LC4202EW_C_ETHHUK11", "LC4202EW_C_CARSNO"]
     self.total_dwellings = sum(self.ks401.OBS_VALUE) + sum(self.communal.OBS_VALUE)
 #    self.dwellings = pd.DataFrame(index=range(0, self.total_dwellings), columns=categories)
     self.dwellings = pd.DataFrame(columns=categories)
@@ -93,7 +93,7 @@ class Microsynthesis:
     buildtype_map = [2, 3, 4, 5]                # 2 (6)
     eth_map = [2, 3, 4, 5, 6, 7, 8]             # 3 (7)
     cars_map = [1, 2, 3]                        # 4 (8)
-    econ_map = [4,5,7,8,9,11,12,14,15,16,17,18] # 5 (9)
+    econ_map = [1, 2, 3, 4, 5, 6, 7, 8, 9]      # 5 (9)
 
     tenure_rooms_occ = self.lc4404.loc[self.lc4404.GEOGRAPHY_CODE == area].copy()
     # unmap indices
@@ -153,20 +153,20 @@ class Microsynthesis:
                             [len(tenure_map),len(eth_map),len(cars_map)],
                             "OBS_VALUE")
 
-    econ = self.lc4601.loc[self.lc4601.GEOGRAPHY_CODE == area].copy()
-    Utils.unmap(econ.C_ECOPUK11, econ_map)
+    econ = self.lc4605.loc[self.lc4605.GEOGRAPHY_CODE == area].copy()
+    Utils.unmap(econ.C_NSSEC, econ_map)
     Utils.unmap(econ.C_TENHUK11, tenure_map)
 
     # econ counts often slightly lower, need to tweak
     econ = Utils.adjust(econ, tenure_eth_car)
 
-    m4601 = Utils.unlistify(econ,
-                            ["C_TENHUK11","C_ECOPUK11"],
+    m4605 = Utils.unlistify(econ,
+                            ["C_TENHUK11","C_NSSEC"],
                             [len(tenure_map),len(econ_map)],
                             "OBS_VALUE")
 
     # no seed constraint so just use QIS
-    p1 = humanleague.qis([np.array([0, 1, 2, 3, 4]), np.array([0, 5, 6]), np.array([0, 7, 8]), np.array([0, 9])], [p0["result"], m4402, m4202, m4601])
+    p1 = humanleague.qis([np.array([0, 1, 2, 3, 4]), np.array([0, 5, 6]), np.array([0, 7, 8]), np.array([0, 9])], [p0["result"], m4402, m4202, m4605])
     #p1 = humanleague.qis([np.array([0, 1, 2, 3]), np.array([0, 4, 5]), np.array([0, 6, 7])], [p0["result"], m4402, m4202])
     assert p1["conv"]
 
@@ -185,7 +185,7 @@ class Microsynthesis:
     chunk.CommunalSize = np.repeat(self.NOTAPPLICABLE, len(table[0]))
     chunk.LC4202EW_C_ETHHUK11 = Utils.remap(table[7], eth_map)
     chunk.LC4202EW_C_CARSNO = Utils.remap(table[8], cars_map)
-    chunk.LC4601EW_C_ECOPUK11 = Utils.remap(table[9], econ_map)
+    chunk.LC4605EW_C_NSSEC = Utils.remap(table[9], econ_map)
     #print(chunk.head())
     self.dwellings = self.dwellings.append(chunk)
 
@@ -228,7 +228,7 @@ class Microsynthesis:
       for j in range(0, establishments):
         chunk.QS420EW_CELL.at[index] = area_communal.at[area_communal.index[i], "CELL"]
         chunk.CommunalSize.at[index] = occ_array[j]
-        chunk.LC4601EW_C_ECOPUK11.at[index] = Utils.communal_economic_status(area_communal.at[area_communal.index[i], "CELL"])
+        chunk.LC4605EW_C_NSSEC.at[index] = Utils.communal_economic_status(area_communal.at[area_communal.index[i], "CELL"])
         index += 1          
 
     #print(chunk.head())
@@ -252,7 +252,7 @@ class Microsynthesis:
     chunk.LC4202EW_C_CARSNO = np.repeat(1, n_unocc) # no cars 
     chunk.QS420EW_CELL = np.repeat(self.NOTAPPLICABLE, n_unocc)
     chunk.CommunalSize = np.repeat(self.NOTAPPLICABLE, n_unocc)
-    chunk.LC4601EW_C_ECOPUK11 = np.repeat(self.UNKNOWN, n_unocc)
+    chunk.LC4605EW_C_NSSEC = np.repeat(self.UNKNOWN, n_unocc)
 
     occ = self.dwellings.loc[(self.dwellings.Area == area) & (self.dwellings.QS420EW_CELL == self.NOTAPPLICABLE)]
 
@@ -321,7 +321,6 @@ class Microsynthesis:
     query_params["C_PPBROOMHEW11"] = "0"
     query_params["C_AHTHUK11"] = "1...5"
     query_params["C_TENHUK11"] = "2,3,5,6"
-    ##query_params["select"] = "GEOGRAPHY_CODE,C_PPBROOMHEW11,C_AHTHUK11,C_TENHUK11,OBS_VALUE"
     query_params["select"] = "GEOGRAPHY_CODE,C_AHTHUK11,C_TENHUK11,OBS_VALUE"
     self.lc4408 = self.api.get_data("LC4408EW", table, query_params)
 
@@ -352,18 +351,15 @@ class Microsynthesis:
     query_params["C_TENHUK11"] = "2,3,5,6"
     query_params["C_ETHHUK11"] = "2...8"
     query_params["select"] = "GEOGRAPHY_CODE,C_ETHHUK11,C_CARSNO,C_TENHUK11,OBS_VALUE"
-    # TODO query_params["geography"] = ...
     self.lc4202 = self.api.get_data("LC4202EW", table, query_params)
 
-    # LC4601EW - Tenure by economic activity by age - Household Reference Persons
-    table = "NM_899_1"
+    # LC4605EW - Tenure by NS-SeC - Household Reference Persons
+    table = "NM_1001_1"
     query_params = common_params.copy()
     query_params["C_TENHUK11"] = "2,3,5,6"
-    query_params["C_ECOPUK11"] = "4,5,7,8,9,11,12,14...18"
-    query_params["C_AGE"] = "0"
-    query_params["select"] = "GEOGRAPHY_CODE,C_TENHUK11,C_ECOPUK11,OBS_VALUE"
-    # TODO query_params["geography"] = ...
-    self.lc4601 = self.api.get_data("LC4601EW", table, query_params)
+    query_params["C_NSSEC"] = "1...9"
+    query_params["select"] = "GEOGRAPHY_CODE,C_TENHUK11,C_NSSEC,OBS_VALUE"
+    self.lc4605 = self.api.get_data("LC4605EW", table, query_params)
 
   def __get_communal_data(self, query_params):
 

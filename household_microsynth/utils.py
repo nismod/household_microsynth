@@ -74,35 +74,32 @@ def communal_economic_status(communal_type):
   # "33": "Other establishment: Other",
   # "34": "Establishment not stated"
 
-  # "4": "Economically active: In employment: Employee: Part-time",
-  # "5": "Economically active: In employment: Employee: Full-time",
-  # "7": "Economically active: In employment: Self-employed: Part-time",
-  # "8": "Economically active: In employment: Self-employed: Full-time",
-  # "9": "Economically active: In employment: Full-time students",
-  # "11": "Economically active: Unemployed: Unemployed (excluding full-time students)",
-  # "12": "Economically active: Unemployed: Full-time students",
-  # "14": "Economically inactive: Retired",
-  # "15": "Economically inactive: Student (including full-time students)",
-  # "16": "Economically inactive: Looking after home or family",
-  # "17": "Economically inactive: Long-term sick or disabled",
-  # "18": "Economically inactive: Other"
+  # 1 (1. Higher managerial, administrative and professional occupations)
+  # 2 (2. Lower managerial, administrative and professional occupations)
+  # 3 (3. Intermediate occupations)
+  # 4 (4. Small employers and own account workers)
+  # 5 (5. Lower supervisory and technical occupations)
+  # 6 (6. Semi-routine occupations)
+  # 7 (7. Routine occupations)
+  # 8 (8. Never worked and long-term unemployed)
+  # 9 (L15 Full-time students)
 
   communal_econ_map = {
     2: -1,
     6: -1,
     11: -1,
     14: -1,
-    22: 5,
-    23: 18,
-    24: 18,
-    25: 18,
-    26: 9, # or 12?
+    22: -1,
+    23: 8,
+    24: 8,
+    25: 8,
+    26: 9, 
     27: -1,
-    28: 11,
+    28: 8,
     29: -1,
     30: -1,
-    31: 18,
-    32: 5,
+    31: 8,
+    32: -1,
     33: -1,
     34: -1
   }
@@ -186,11 +183,11 @@ def check(msynth, total_occ_dwellings, total_households, total_communal, total_h
 
 
   # Economic status (might be small diffs) (ignoring communal and unoccupied)
-  assert np.array_equal(sorted(msynth.dwellings[msynth.dwellings.LC4601EW_C_ECOPUK11 != msynth.UNKNOWN].LC4601EW_C_ECOPUK11.unique()), msynth.lc4601["C_ECOPUK11"].unique())
-  for i in msynth.lc4601["C_ECOPUK11"].unique():
-    assert len(msynth.dwellings[(msynth.dwellings.LC4601EW_C_ECOPUK11 == i)
+  assert np.array_equal(sorted(msynth.dwellings[msynth.dwellings.LC4605EW_C_NSSEC != msynth.UNKNOWN].LC4605EW_C_NSSEC.unique()), msynth.lc4605["C_NSSEC"].unique())
+  for i in msynth.lc4605["C_NSSEC"].unique():
+    assert len(msynth.dwellings[(msynth.dwellings.LC4605EW_C_NSSEC == i)
                              & (msynth.dwellings.LC4404EW_C_SIZHUK11 != 0)
-                             & (msynth.dwellings.QS420EW_CELL == msynth.NOTAPPLICABLE)]) >= sum(msynth.lc4601[msynth.lc4601["C_ECOPUK11"] == i].OBS_VALUE)
+                             & (msynth.dwellings.QS420EW_CELL == msynth.NOTAPPLICABLE)]) >= sum(msynth.lc4605[msynth.lc4605["C_NSSEC"] == i].OBS_VALUE)
 
   # Ethnicity (ignoring communal and unoccupied)
   assert np.array_equal(sorted(msynth.dwellings[msynth.dwellings.LC4202EW_C_ETHHUK11 != msynth.UNKNOWN].LC4202EW_C_ETHHUK11.unique()), msynth.lc4202["C_ETHHUK11"].unique())

@@ -11,6 +11,7 @@ import household_microsynth.utils as Utils
 
 assert humanleague.version() > 1
 CACHE_DIR = "./cache"
+OUTPUT_DIR = "./data"
 
 # The microsynthesis makes use of the following tables:
 # LC4402EW - Accommodation type by type of central heating in household by tenure
@@ -84,7 +85,7 @@ def main(region, resolution):
     print("ok")
   else:
     print("failed")
-  output = "./hh_" + region + "_" + resolution + ".csv"
+  output = OUTPUT_DIR + "/hh_" + region + "_" + resolution + ".csv"
   print("Writing synthetic population to", output)
   msynth.dwellings.to_csv(output)
   print("DONE")

@@ -48,7 +48,7 @@ Resolution can be one of: LA, MSOA11, LSOA11, OA11.
 
 The microsynthesis combines census data on occupied households, communal residences, and unoccupied dwellings to generate a synthetic population of dwellings classified in a number of categories, shown in the table below.
 
-It can be used to generate a realistic synthetic population of dwellings in a region at a specified geopgraphical resolution. Regions can be one or more local authorities or countrywide, and the geographical resolutions supported are: local authority, MSOA, LSOA or OA. The synthetic population is consistent with the census aggregates within the specified geographical resolution.
+It can be used to generate a realistic synthetic population of dwellings in a region at a specified geographical resolution. Regions can be one or more local authorities or countrywide, and the geographical resolutions supported are: local authority, MSOA, LSOA or OA. The synthetic population is consistent with the census aggregates within the specified geographical resolution.
 
 The term 'unoccupied' in this context means a dwelling that is not permanently occupied, or is unoccupied, _on the census date_. This of course does not mean that the property is permanently unoccupied, and could actually mean that the occupants did not return the census form. The census tells us only that these properties exist.
 
@@ -67,7 +67,7 @@ Category values for a dwelling may be unknown or unapplicable in the synthesised
 |Bedrooms      |LC4405EW_C_BEDROOMS     |Number of bedrooms (capped at 4)
 |PPerBed       |LC4408EW_C_PPBROOMHEW11 |Ratio of occupants to bedrooms (approximate) 
 |CentHeat      |LC4402_C_CENHEATHUK11   |Presence of central heating 
-|EconStatus    |LC4601EW_C_ECOPUK11     |Economic status of household reference person, e.g employed full-time
+|SE Class      |LC4605EW_C_NSSEC        |Socio-economic classification of household reference person
 |Ethnicity     |LC4202EW_C_ETHHUK11     |Ethnicity of household reference person, e.g. Asian
 |NumCars       |LC4202EW_C_CARSNO       |Number of cars used by household (capped at 2)
 
@@ -89,7 +89,7 @@ __It is important that users ensure they have an account with nomisweb.co.uk and
 |`KS401EW` | Dwellings, household spaces and accommodation type|         
 |`QS420EW` | Communal establishment management and type - Communal establishments|         
 |`QS421EW` | Communal establishment management and type - People|
-|`LC4601EW`| Tenure by economic activity by age - Household Reference Persons |
+|`LC4605EW`| Tenure by socio-economic classification - Household Reference Persons |
 |`LC4202EW`| Tenure by car or van availability by ethnic group of Household Reference Person (HRP) |
 
 # Methodology

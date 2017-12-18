@@ -1,0 +1,38 @@
+{
+  "fields": {
+    "MEASURES": {
+      "20100": "value"
+    },
+    "C_NSSEC": {
+      "0": "All categories: NS-SeC",
+      "1": "1. Higher managerial, administrative and professional occupations",
+      "2": "2. Lower managerial, administrative and professional occupations",
+      "3": "3. Intermediate occupations",
+      "4": "4. Small employers and own account workers",
+      "5": "5. Lower supervisory and technical occupations",
+      "6": "6. Semi-routine occupations",
+      "7": "7. Routine occupations",
+      "8": "8. Never worked and long-term unemployed",
+      "9": "L15 Full-time students"
+    },
+    "GEOGRAPHY": {
+      "2092957699": "England",
+      "2092957700": "Wales",
+      "2092957703": "England and Wales"
+    },
+    "FREQ": {
+      "A": "Annually"
+    },
+    "C_TENHUK11": {
+      "0": "All categories: Tenure",
+      "1": "Owned or shared ownership: Total",
+      "2": "Owned: Owned outright",
+      "3": "Owned: Owned with a mortgage or loan or shared ownership",
+      "4": "Rented or living rent free: Total",
+      "5": "Rented: Social rented",
+      "6": "Rented: Private rented or living rent free"
+    }
+  },
+  "description": "LC4605EW - Tenure by NS-SeC - Household Reference Persons",
+  "nomis_table": "NM_1001_1"
+}
