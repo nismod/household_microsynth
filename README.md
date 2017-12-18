@@ -276,7 +276,7 @@ And there are ten metadata files - one for each census table - which can be used
 - [QS420EW](example/QS420EW_metadata.json)
 - [QS421EW](example/QS421EW_metadata.json)
 - [LC4202EW](example/LC4202EW_metadata.json)
-- [LC4601EW](example/LC4601EW_metadata.json)
+- [LC4605EW](example/LC4605EW_metadata.json)
 
 # Contributing
 
