@@ -7,3 +7,5 @@ cache/
 data/
 .Rproj.user
 apikey.sh
+run.sh.o*
+run.sh.e*

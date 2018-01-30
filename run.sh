@@ -12,7 +12,7 @@ if [ -z "$REGION" ]; then
   exit 1
 fi
 
-#$ -m be
+#$ -m e
 #$ -M a.p.smith@leeds.ac.uk
 #$ -cwd -V
 #$ -l h_vmem=1G

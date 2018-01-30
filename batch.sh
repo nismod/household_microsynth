@@ -39,16 +39,19 @@ W06000021 W06000022 W06000023 W06000024"
 
 resolution="OA11"
 
+# ensure data directory exists
+mkdir -p data
+
 # max run time (NB Birmingham takes longest at ~6h)
 qsub_params="-l h_rt=8:0:0"
 
 for region in $regions; do
-  outfile="hh_"$region"_"$resolution".csv"
+  outfile="data/hh_"$region"_"$resolution".csv"
   if [ ! -f $outfile ]; then
     export REGION=$region
     echo Submitting job for $REGION
     qsub $qsub_params run.sh
-    sleep 10
+    sleep 10 
   else
     echo $region done, not resubmitting
   fi
