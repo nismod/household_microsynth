@@ -1,14 +1,15 @@
-# Household microsynthesis
+""" Household microsynthesis """
 
+from random import randint
 import numpy as np
 import pandas as pd
-from random import randint
 
 import ukcensusapi.Nomisweb as Api
 import humanleague
 import household_microsynth.utils as Utils
 
 class Microsynthesis:
+  """ Household microsynthesis """
 
   # Placeholders for unknown or non-applicable category values
   UNKNOWN = -1
@@ -41,32 +42,32 @@ class Microsynthesis:
     #self.ppb_index = self.lc4408.C_PPBROOMHEW11.unique()
     self.comp_index = self.lc4408.C_AHTHUK11.unique()
 
-  # run the microsynthesis
   def run(self):
+    """ run the microsynthesis """
 
     area_map = self.lc4404.GEOGRAPHY_CODE.unique()
 
     # construct seed disallowing states where B>R]
     #                           T  R  O  B  X  (X=household type)
-    self.constraints = np.ones([4, 6, 4, 4, 5])
+    constraints = np.ones([4, 6, 4, 4, 5])
     # forbid bedrooms>rooms
-    for r in range(0,6): # use rooms/beds map sizes
-      for b in range(r+1,4):
-        self.constraints[:,r,:,b,:] = 0
+    for r in range(0, 6): # use rooms/beds map sizes
+      for b in range(r+1, 4):
+        constraints[:, r, :, b, :] = 0
     # constrain single person household to occupants=1
-    self.constraints[:,:,0,:,1] = 0
-    self.constraints[:,:,0,:,2] = 0
-    self.constraints[:,:,0,:,3] = 0
-    self.constraints[:,:,0,:,4] = 0
-    self.constraints[:,:,1,:,0] = 0
-    self.constraints[:,:,2,:,0] = 0
-    self.constraints[:,:,3,:,0] = 0
+    constraints[:, :, 0, :, 1] = 0
+    constraints[:, :, 0, :, 2] = 0
+    constraints[:, :, 0, :, 3] = 0
+    constraints[:, :, 0, :, 4] = 0
+    constraints[:, :, 1, :, 0] = 0
+    constraints[:, :, 2, :, 0] = 0
+    constraints[:, :, 3, :, 0] = 0
 
     for area in area_map:
       print('.', end='', flush=True)
 
       # 1. households
-      self.__add_households(area)
+      self.__add_households(area, constraints)
 
       # add communal residences
       self.__add_communal(area)
@@ -78,9 +79,8 @@ class Microsynthesis:
 
     # temp fix - TODO remove this column?
     self.dwellings.LC4408EW_C_PPBROOMHEW11 = np.repeat(self.UNKNOWN, len(self.dwellings.LC4408EW_C_PPBROOMHEW11))
-  
 
-  def __add_households(self, area):
+  def __add_households(self, area, constraints):
 
     # TODO make members?                        # Dim (overall dim)
     tenure_map = [2, 3, 5, 6]                   # 0
@@ -88,7 +88,7 @@ class Microsynthesis:
     occupants_map = [1, 2, 3, 4]                # 2
     bedrooms_map = [1, 2, 3, 4]                 # 3
     hhtype_map = [1, 2, 3, 4, 5]                # 4
-    #                           
+    #
     ch_map = [1, 2]                             # 1 (5)
     buildtype_map = [2, 3, 4, 5]                # 2 (6)
     eth_map = [2, 3, 4, 5, 6, 7, 8]             # 3 (7)
@@ -102,9 +102,9 @@ class Microsynthesis:
     Utils.unmap(tenure_rooms_occ.C_ROOMS, rooms_map)
     Utils.unmap(tenure_rooms_occ.C_SIZHUK11, occupants_map)
 
-    m4404 = Utils.unlistify(tenure_rooms_occ, 
-                            ["C_TENHUK11","C_ROOMS","C_SIZHUK11"], 
-                            [len(tenure_map),len(rooms_map),len(occupants_map)], 
+    m4404 = Utils.unlistify(tenure_rooms_occ,
+                            ["C_TENHUK11", "C_ROOMS", "C_SIZHUK11"],
+                            [len(tenure_map), len(rooms_map), len(occupants_map)],
                             "OBS_VALUE")
 
     tenure_beds_occ = self.lc4405.loc[self.lc4405.GEOGRAPHY_CODE == area].copy()
@@ -115,8 +115,8 @@ class Microsynthesis:
     Utils.unmap(tenure_beds_occ.C_SIZHUK11, occupants_map)
 
     m4405 = Utils.unlistify(tenure_beds_occ,
-                            ["C_TENHUK11","C_BEDROOMS","C_SIZHUK11"],
-                            [len(tenure_map),len(bedrooms_map),len(occupants_map)],
+                            ["C_TENHUK11", "C_BEDROOMS", "C_SIZHUK11"],
+                            [len(tenure_map), len(bedrooms_map), len(occupants_map)],
                             "OBS_VALUE")
 
     tenure_accom = self.lc4408.loc[self.lc4408.GEOGRAPHY_CODE == area].copy()
@@ -125,12 +125,12 @@ class Microsynthesis:
     Utils.unmap(tenure_accom.C_AHTHUK11, hhtype_map)
 
     m4408 = Utils.unlistify(tenure_accom,
-                            ["C_TENHUK11","C_AHTHUK11"],
-                            [len(tenure_map),len(hhtype_map)],
+                            ["C_TENHUK11", "C_AHTHUK11"],
+                            [len(tenure_map), len(hhtype_map)],
                             "OBS_VALUE")
 
     # TODO relax IPF tolerance and maxiters when used within QISI?
-    p0 = humanleague.qisi(self.constraints, [np.array([0,1,2]), np.array([0,3,2]), np.array([0,4])], [m4404, m4405, m4408])
+    p0 = humanleague.qisi(constraints, [np.array([0, 1, 2]), np.array([0, 3, 2]), np.array([0, 4])], [m4404, m4405, m4408])
     assert p0["conv"]
 
     tenure_ch_accom = self.lc4402.loc[self.lc4402.GEOGRAPHY_CODE == area].copy()
@@ -139,8 +139,8 @@ class Microsynthesis:
     Utils.unmap(tenure_ch_accom.C_TYPACCOM, buildtype_map)
 
     m4402 = Utils.unlistify(tenure_ch_accom,
-                            ["C_TENHUK11","C_CENHEATHUK11","C_TYPACCOM"],
-                            [len(tenure_map),len(bedrooms_map),len(occupants_map)],
+                            ["C_TENHUK11", "C_CENHEATHUK11", "C_TYPACCOM"],
+                            [len(tenure_map), len(bedrooms_map), len(occupants_map)],
                             "OBS_VALUE")
 
     tenure_eth_car = self.lc4202.loc[self.lc4202.GEOGRAPHY_CODE == area].copy()
@@ -149,8 +149,8 @@ class Microsynthesis:
     Utils.unmap(tenure_eth_car.C_TENHUK11, tenure_map)
 
     m4202 = Utils.unlistify(tenure_eth_car,
-                            ["C_TENHUK11","C_ETHHUK11","C_CARSNO"],
-                            [len(tenure_map),len(eth_map),len(cars_map)],
+                            ["C_TENHUK11", "C_ETHHUK11", "C_CARSNO"],
+                            [len(tenure_map), len(eth_map), len(cars_map)],
                             "OBS_VALUE")
 
     econ = self.lc4605.loc[self.lc4605.GEOGRAPHY_CODE == area].copy()
@@ -161,8 +161,8 @@ class Microsynthesis:
     econ = Utils.adjust(econ, tenure_eth_car)
 
     m4605 = Utils.unlistify(econ,
-                            ["C_TENHUK11","C_NSSEC"],
-                            [len(tenure_map),len(econ_map)],
+                            ["C_TENHUK11", "C_NSSEC"],
+                            [len(tenure_map), len(econ_map)],
                             "OBS_VALUE")
 
     # no seed constraint so just use QIS
@@ -229,16 +229,16 @@ class Microsynthesis:
         chunk.QS420EW_CELL.at[index] = area_communal.at[area_communal.index[i], "CELL"]
         chunk.CommunalSize.at[index] = occ_array[j]
         chunk.LC4605EW_C_NSSEC.at[index] = Utils.communal_economic_status(area_communal.at[area_communal.index[i], "CELL"])
-        index += 1          
+        index += 1
 
     #print(chunk.head())
     self.dwellings = self.dwellings.append(chunk)
 
   # unoccupied, should be one entry per area
-  # sample from the occupied houses 
+  # sample from the occupied houses
   def __add_unoccupied(self, area):
     unocc = self.ks401.loc[(self.ks401.GEOGRAPHY_CODE == area) & (self.ks401.CELL == 6)]
-    assert len(unocc == 1)
+    assert len(unocc) == 1
     n_unocc = unocc.at[unocc.index[0], "OBS_VALUE"]
     #print(n_unocc)
 
@@ -249,7 +249,7 @@ class Microsynthesis:
     chunk.LC4408_C_AHTHUK11 = np.repeat(self.UNKNOWN, n_unocc)
     chunk.LC4402_C_TYPACCOM = np.repeat(self.NOTAPPLICABLE, n_unocc)
     chunk.LC4202EW_C_ETHHUK11 = np.repeat(self.UNKNOWN, n_unocc) # mixed/multiple
-    chunk.LC4202EW_C_CARSNO = np.repeat(1, n_unocc) # no cars 
+    chunk.LC4202EW_C_CARSNO = np.repeat(1, n_unocc) # no cars
     chunk.QS420EW_CELL = np.repeat(self.NOTAPPLICABLE, n_unocc)
     chunk.CommunalSize = np.repeat(self.NOTAPPLICABLE, n_unocc)
     chunk.LC4605EW_C_NSSEC = np.repeat(self.UNKNOWN, n_unocc)
@@ -277,8 +277,8 @@ class Microsynthesis:
       region_codes = self.api.GeoCodeLookup[self.region]
     else:
       region_codes = self.api.get_lad_codes(self.region)
-      if not len(region_codes):
-        raise ValueError("no regions match the input: \"" + region + "\"")
+      if not region_codes:
+        raise ValueError("no regions match the input: \"" + self.region + "\"")
 
     area_codes = self.api.get_geo_codes(region_codes, resolution)
 
@@ -342,7 +342,7 @@ class Microsynthesis:
     self.ks401 = self.api.get_data("KS401EW", table, query_params)
 
     # NOTE: common_params is passed by ref so take a copy
-    self.__get_communal_data(common_params.copy())
+    self.communal = self.__get_communal_data(common_params.copy())
 
     # LC4202EW - Tenure by car or van availability by ethnic group of Household Reference Person (HRP)
     table = "NM_880_1"
@@ -367,10 +367,9 @@ class Microsynthesis:
     query_params["CELL"] = "2,6,11,14,22...34"
     query_params["select"] = "GEOGRAPHY_CODE,CELL,OBS_VALUE"
     # communal is qs420 plus qs421
-    self.communal = self.api.get_data("QS420EW", "NM_552_1", query_params) # establishments
+    communal = self.api.get_data("QS420EW", "NM_552_1", query_params) # establishments
     qs421 = self.api.get_data("QS421EW", "NM_553_1", query_params) # people
 
     # merge the two tables (so we have establishment and people counts)
-    self.communal["CommunalSize"] = qs421.OBS_VALUE
-    
-
+    communal["CommunalSize"] = qs421.OBS_VALUE
+    return communal

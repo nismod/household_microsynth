@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
-# run script for Household microsynthesis
+"""
+run script for Household microsynthesis
+"""
 
-import sys
 import time
+import argparse
 import humanleague
 #import ukcensusapi.Nomisweb as Api
 import household_microsynth.microsynthesis as Microsynthesiser
@@ -27,6 +29,7 @@ OUTPUT_DIR = "./data"
 # TODO: differentiate between purpose-built and converted flats?
 
 def main(region, resolution):
+  """ Entry point """
 
   # # start timing
   start_time = time.time()
@@ -36,8 +39,8 @@ def main(region, resolution):
   # init microsynthesis
   try:
     msynth = Microsynthesiser.Microsynthesis(region, resolution, CACHE_DIR)
-  except Exception as e:
-    print(e)
+  except Exception as error:
+    print(error)
     return
 
   # Do some basic checks on totals
@@ -73,15 +76,15 @@ def main(region, resolution):
   # generate the population
   try:
     msynth.run()
-  except Exception as e:
-    print(e)
+  except Exception as error:
+    print(error)
     return
 
   print("Done. Exec time(s): ", time.time() - start_time)
 
   print("Checking consistency")
-  ok = Utils.check(msynth, total_occ_dwellings, total_households, total_communal, occ_pop_lbound, communal_pop)
-  if ok:
+  success = Utils.check(msynth, total_occ_dwellings, total_households, total_communal, occ_pop_lbound, communal_pop)
+  if success:
     print("ok")
   else:
     print("failed")
@@ -91,10 +94,11 @@ def main(region, resolution):
   print("DONE")
 
 if __name__ == "__main__":
-  if len(sys.argv) != 3:
-    print("usage:", sys.argv[0], "<region> <resolution>")
-    print("e.g:", sys.argv[0], "E09000001 OA11")
-  else:
-    REGION = sys.argv[1]
-    RESOLUTION = sys.argv[2]
-    main(REGION, RESOLUTION)
+
+  parser = argparse.ArgumentParser(description="household microsynthesis")
+  parser.add_argument("region", type=str, help="the ONS code of the local authority district (LAD) to be covered by the microsynthesis, e.g. E09000001")
+  parser.add_argument("resolution", type=str, help="the geographical resolution of the microsynthesis (e.g. OA11, LSOA11, MSOA11)")
+
+  args = parser.parse_args()
+
+  main(args.region, args.resolution)
