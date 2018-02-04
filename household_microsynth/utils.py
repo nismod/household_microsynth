@@ -106,7 +106,7 @@ def communal_economic_status(communal_type):
   return communal_econ_map[communal_type]
 
 # TODO asserts are not idea here as it will bale immediately
-def check(msynth, total_occ_dwellings, total_households, total_communal, total_household_poplb, total_communal_pop):
+def check_hh(msynth, total_occ_dwellings, total_households, total_communal, total_household_poplb, total_communal_pop):
   # correct number of dwellings
   #print(len(msynth.dwellings), msynth.total_dwellings)
   assert len(msynth.dwellings) == msynth.total_dwellings

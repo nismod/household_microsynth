@@ -8,7 +8,7 @@ import ukcensusapi.Nomisweb as Api
 import humanleague
 import household_microsynth.utils as Utils
 
-class Microsynthesis:
+class Household:
   """ Household microsynthesis """
 
   # Placeholders for unknown or non-applicable category values
