@@ -111,48 +111,31 @@ def do_hrp(region, resolution):
   print("Microsynthesis region:", region)
   print("Microsynthesis resolution:", resolution)
   # init microsynthesis
-  try:
-    msynth = hrp_msynth.ReferencePerson(region, resolution, CACHE_DIR)
-  except Exception as error:
-    print(error)
-    return
+  #try:
+  msynth = hrp_msynth.ReferencePerson(region, resolution, CACHE_DIR)
+  #except Exception as error:
+  #  print(error)
+  #  return
 
   # Do some basic checks on totals
-  # total_occ_dwellings = sum(msynth.lc4402.OBS_VALUE)
-  # assert sum(msynth.lc4404.OBS_VALUE) == total_occ_dwellings
-  # assert sum(msynth.lc4405.OBS_VALUE) == total_occ_dwellings
-  # assert sum(msynth.lc4408.OBS_VALUE) == total_occ_dwellings
-  # assert sum(msynth.ks401[msynth.ks401.CELL == 5].OBS_VALUE) == total_occ_dwellings
+  total_hrps = sum(msynth.lc4201.OBS_VALUE) 
+  #assert sum(msynth.lc4605.OBS_VALUE) == total_hrps
+  assert sum(msynth.qs111.OBS_VALUE) == total_hrps
+  assert sum(msynth.lc1102.OBS_VALUE) == total_hrps
 
-  # total_population = sum(msynth.lc1105.OBS_VALUE)
-  # total_households = sum(msynth.ks401.OBS_VALUE)
-  # total_communal = sum(msynth.communal.OBS_VALUE)
-  # total_dwellings = total_households + total_communal
+  if sum(msynth.lc4605.OBS_VALUE) != total_hrps:
+    print("Count mismatch in table LC4605: " + str(sum(msynth.lc4605.OBS_VALUE)))
 
-  # occ_pop_lbound = sum(msynth.lc4404.C_SIZHUK11 * msynth.lc4404.OBS_VALUE)
-  # household_pop = sum(msynth.lc1105[msynth.lc1105.C_RESIDENCE_TYPE == 1].OBS_VALUE)
-  # communal_pop = sum(msynth.lc1105[msynth.lc1105.C_RESIDENCE_TYPE == 2].OBS_VALUE)
-
-  # print("Households: ", total_households)
-  # print("Occupied households: ", total_occ_dwellings)
-  # print("Unoccupied dwellings: ", total_households - total_occ_dwellings)
-  # print("Communal residences: ", total_communal)
-
-  # print("Total dwellings: ", total_dwellings)
-  # print("Total population: ", total_population)
-  # print("Population in occupied households: ", household_pop)
-  # print("Population in communal residences: ", communal_pop)
-  # print("Population lower bound from occupied households: ", occ_pop_lbound)
-  # print("Occupied household dwellings underestimate: ", household_pop - occ_pop_lbound)
+  print("Households: ", total_hrps)
 
   print("Number of geographical areas: ", len(msynth.lc4605.GEOGRAPHY_CODE.unique()))
 
   # generate the population
-  try:
-    msynth.run()
-  except Exception as error:
-    print(error)
-    return
+  #try:
+  msynth.run()
+  #except Exception as error:
+  #  print(error)
+  #  return
 
   print("Done. Exec time(s): ", time.time() - start_time)
 

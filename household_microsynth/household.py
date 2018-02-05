@@ -82,6 +82,7 @@ class Household:
 
   def __add_households(self, area, constraints):
 
+    # TODO remove - duplicate(?)
     # TODO make members?                        # Dim (overall dim)
     tenure_map = [2, 3, 5, 6]                   # 0
     rooms_map = [1, 2, 3, 4, 5, 6]              # 1
