@@ -37,10 +37,13 @@ def remap(indices, mapping):
   return values
 
 def unlistify(table, cols, sizes, vals):
-  pivot = table.pivot_table(index=cols, values=vals)
-  # order must be same as column order above
-  a = np.zeros(sizes, dtype=int)
-  a[pivot.index.labels] = pivot.values.flat
+  if len(cols) == 1:
+    a = table.groupby(cols[0])[vals].sum().as_matrix()
+  else:
+    pivot = table.pivot_table(index=cols, values=vals)
+    # order must be same as column order above
+    a = np.zeros(sizes, dtype=int)
+    a[pivot.index.labels] = pivot.values.flat
   return a
 
 def people_per_bedroom(people, bedrooms):

@@ -117,14 +117,17 @@ def do_hrp(region, resolution):
   #  print(error)
   #  return
 
-  # Do some basic checks on totals
+  # Do some basic checks on totals 
+  # TODO this should probably be in ref_person.py
   total_hrps = sum(msynth.lc4201.OBS_VALUE) 
-  #assert sum(msynth.lc4605.OBS_VALUE) == total_hrps
   assert sum(msynth.qs111.OBS_VALUE) == total_hrps
   assert sum(msynth.lc1102.OBS_VALUE) == total_hrps
 
   if sum(msynth.lc4605.OBS_VALUE) != total_hrps:
-    print("Count mismatch in table LC4605: " + str(sum(msynth.lc4605.OBS_VALUE)))
+    lc4605_hrps = sum(msynth.lc4605.OBS_VALUE)
+    print("Count mismatch in table LC4605 ("+str(lc4605_hrps)+ ") will be adjusted" )
+
+  #assert sum(msynth.lc4605.OBS_VALUE) == total_hrps
 
   print("Households: ", total_hrps)
 

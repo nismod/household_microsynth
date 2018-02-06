@@ -65,6 +65,18 @@ class ReferencePerson:
     constraints = np.ones([9, 4, 4, 7, 12, 7])
     # seed from microdata...
 
+    #print(msynth.lc4605.OBS_VALUE.as_matrix())
+    # LC4605 totals are not "trusted"
+    lc4605_hrps = sum(self.lc4605.OBS_VALUE) 
+    total_hrps = sum(self.lc4201.OBS_VALUE) 
+    # this isnt good enough - need 2d in order to preserve partial sum in tenure dim
+    # get tenure marginal from lc4201
+    # get OA marginal from lc4201
+    # scale up nssec marginal from lc4605
+    # use lc4605 as seed
+    self.lc4605.OBS_VALUE = humanleague.prob2IntFreq(self.lc4605.OBS_VALUE.as_matrix() / lc4605_hrps, total_hrps)["freq"]
+
+
     for area in area_map:
       print('.', end='', flush=True)
 
@@ -84,11 +96,12 @@ class ReferencePerson:
                             ["C_NSSEC", "C_TENHUK11"],
                             [len(self.nssec_index), len(self.tenure_index)],
                             "OBS_VALUE")
+    #print(m4605)
 
     age_eth_tenure = self.lc4201.loc[self.lc4201.GEOGRAPHY_CODE == area].copy()
     # unmap indices
     # TODO might be quicker to unmap the entire table upfront?
-    Utils.unmap(age_eth_tenure.C_AGE, self.age_index)
+    #Utils.unmap(age_eth_tenure.C_AGE, self.age_index)
     Utils.unmap(age_eth_tenure.C_ETHPUK11, self.eth_index)
     Utils.unmap(age_eth_tenure.C_TENHUK11, self.tenure_index)
 
@@ -96,17 +109,21 @@ class ReferencePerson:
                             ["C_AGE", "C_ETHPUK11", "C_TENHUK11"],
                             [len(self.age_index), len(self.eth_index), len(self.tenure_index)],
                             "OBS_VALUE")
+    # collapse age 
+    m4201 = np.sum(m4201, axis=0)
+    #print(m4201)
 
     lifestage = self.qs111.loc[self.qs111.GEOGRAPHY_CODE == area].copy()
     # unmap indices
     # TODO might be quicker to unmap the entire table upfront?
     Utils.unmap(lifestage.C_HHLSHUK11, self.lifestage_index)
 
-    # mq111 = Utils.unlistify(lifestage,
-    #                         ["C_HHLSHUK11"],
-    #                         [len(self.lifestage_index)],
-    #                         "OBS_VALUE")
-    # print(mq111)
+    mq111 = Utils.unlistify(lifestage,
+                            ["C_HHLSHUK11"],
+                            [len(self.lifestage_index)],
+                            "OBS_VALUE")
+    #mq111 = lifestage.OBS_VALUE
+    #print(mq111)
 
     age_livarr = self.lc1102.loc[self.lc1102.GEOGRAPHY_CODE == area].copy()
 
@@ -115,15 +132,21 @@ class ReferencePerson:
     Utils.unmap(age_livarr.C_AGE, self.age_index)
     Utils.unmap(age_livarr.C_LARPUK11, self.livarr_index)
 
-    # TODO resolve age band incompatibility issues
+    # # TODO resolve age band incompatibility issues
     # m1102 = Utils.unlistify(age_livarr,
     #                         ["C_AGE", "C_LARPUK11"],
-    #                         [len(self.age_index), len(self.livarr_index)],
+    #                         [len(self.age_index) + 1, len(self.livarr_index)],
     #                         "OBS_VALUE")
-    # print(m1102)
+    # m1102 = age_livarr.groupby("C_LARPUK11")["OBS_VALUE"].sum().as_matrix()
+    m1102 = Utils.unlistify(age_livarr,
+                            ["C_LARPUK11"],
+                            [len(self.livarr_index)],
+                            "OBS_VALUE")
+    #print(m1102)
 
-    p0 = humanleague.qis([np.array([0, 1]), np.array([2, 3, 1])], [m4605, m4201])
-    print(p0)
+    p0 = humanleague.qis([np.array([0, 1]), np.array([2, 1]), np.array([3]), np.array([4])], [m4605, m4201, mq111, m1102])
+    if type(p0) is str:
+      print(p0)
     #assert p0["conv"]
 
   def __get_census_data(self):
