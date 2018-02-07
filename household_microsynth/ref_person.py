@@ -65,18 +65,6 @@ class ReferencePerson:
     constraints = np.ones([9, 4, 4, 7, 12, 7])
     # seed from microdata...
 
-    #print(msynth.lc4605.OBS_VALUE.as_matrix())
-    # LC4605 totals are not "trusted"
-    lc4605_hrps = sum(self.lc4605.OBS_VALUE) 
-    total_hrps = sum(self.lc4201.OBS_VALUE) 
-    # this isnt good enough - need 2d in order to preserve partial sum in tenure dim
-    # get tenure marginal from lc4201
-    # get OA marginal from lc4201
-    # scale up nssec marginal from lc4605
-    # use lc4605 as seed
-    self.lc4605.OBS_VALUE = humanleague.prob2IntFreq(self.lc4605.OBS_VALUE.as_matrix() / lc4605_hrps, total_hrps)["freq"]
-
-
     for area in area_map:
       print('.', end='', flush=True)
 
@@ -111,8 +99,22 @@ class ReferencePerson:
                             "OBS_VALUE")
     # collapse age 
     m4201 = np.sum(m4201, axis=0)
-    #print(m4201)
 
+    # now check LC4605 total matches LC4201 and adjust as necessary (ensuring partial sum in tenure dimension is preserved)
+    m4605_sum = np.sum(m4605)
+    m4201_sum = np.sum(m4201)
+    if m4605_sum != m4201_sum: 
+      print("LC4605:"+str(m4605_sum)+"->"+str(m4201_sum), end="")
+      tenure_4201 = np.sum(m4201, axis=0)
+      nssec_4605_adj = humanleague.prob2IntFreq(np.sum(m4605, axis=1) / m4605_sum, m4201_sum)["freq"]
+      #print(m4605)
+      m4605_adj = humanleague.qisi(m4605.astype(float), [np.array([0]), np.array([1])], [nssec_4605_adj, tenure_4201])
+      if type(m4605_adj) is str:
+        print(m4605_adj)
+      assert m4605_adj["conv"]
+      m4605 = m4605_adj["result"]
+      #print(m4605)
+      
     lifestage = self.qs111.loc[self.qs111.GEOGRAPHY_CODE == area].copy()
     # unmap indices
     # TODO might be quicker to unmap the entire table upfront?
@@ -147,7 +149,23 @@ class ReferencePerson:
     p0 = humanleague.qis([np.array([0, 1]), np.array([2, 1]), np.array([3]), np.array([4])], [m4605, m4201, mq111, m1102])
     if type(p0) is str:
       print(p0)
-    #assert p0["conv"]
+    assert p0["conv"]
+
+    table = humanleague.flatten(p0["result"])
+
+    categories = ["Area", "LC4605_C_NSSEC", "LC4605_C_TENHUK11", "LC4201_C_AGE", "LC4201_C_ETHPUK11", 
+                   "QS111_C_HHLSHUK11", "LC1102_C_LARPUK11"]
+    
+
+    chunk = pd.DataFrame(columns=self.hrps.columns.values)
+    chunk.Area = np.repeat(area, len(table[0]))
+    chunk.LC4605_C_NSSEC = Utils.remap(table[0], self.nssec_index)
+    chunk.LC4605_C_TENHUK11 = Utils.remap(table[1], self.tenure_index)
+    chunk.LC4201_C_ETHPUK11 = Utils.remap(table[2], self.eth_index)
+    chunk.QS111_C_HHLSHUK11 = Utils.remap(table[3], self.lifestage_index)
+    chunk.LC1102_C_LARPUK11 = Utils.remap(table[4], self.livarr_index)
+    #print(chunk.head())
+    self.hrps = self.hrps.append(chunk)
 
   def __get_census_data(self):
     """ 
@@ -181,6 +199,7 @@ class ReferencePerson:
     query_params["C_NSSEC"] = "1...9"
     query_params["select"] = "GEOGRAPHY_CODE,C_NSSEC,C_TENHUK11,OBS_VALUE"
     self.lc4605 = self.api.get_data("LC4605EW", table, query_params)
+    #self.lc4605.to_csv("LC4605.csv")
 
     # LC4201EW  Tenure by ethnic group by age - Household Reference Persons
     # "C_AGE": {

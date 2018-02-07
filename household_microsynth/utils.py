@@ -209,3 +209,7 @@ def check_hh(msynth, total_occ_dwellings, total_households, total_communal, tota
   return True
 
 
+def check_hrp(msynth, total_hrps):
+  # correct number of household ref personsl_dwellings)
+  assert len(msynth.hrps) == total_hrps
+  return True

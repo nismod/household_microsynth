@@ -125,9 +125,7 @@ def do_hrp(region, resolution):
 
   if sum(msynth.lc4605.OBS_VALUE) != total_hrps:
     lc4605_hrps = sum(msynth.lc4605.OBS_VALUE)
-    print("Count mismatch in table LC4605 ("+str(lc4605_hrps)+ ") will be adjusted" )
-
-  #assert sum(msynth.lc4605.OBS_VALUE) == total_hrps
+    print("Count mismatch in table LC4605 ("+str(lc4605_hrps)+ ") will be adjusted. (Likely missing HRPs aged under 16)" )
 
   print("Households: ", total_hrps)
 
@@ -142,16 +140,16 @@ def do_hrp(region, resolution):
 
   print("Done. Exec time(s): ", time.time() - start_time)
 
-  # print("Checking consistency")
-  # success = Utils.check(msynth, total_occ_dwellings, total_households, total_communal, occ_pop_lbound, communal_pop)
-  # if success:
-  #   print("ok")
-  # else:
-  #   print("failed")
-  # output = OUTPUT_DIR + "/hh_" + region + "_" + resolution + ".csv"
-  # print("Writing synthetic population to", output)
-  # msynth.dwellings.to_csv(output)
-  # print("DONE")
+  print("Checking consistency")
+  success = Utils.check_hrp(msynth, total_hrps)
+  if success:
+    print("ok")
+  else:
+    print("failed")
+  output = OUTPUT_DIR + "/hrp_" + region + "_" + resolution + ".csv"
+  print("Writing synthetic population to", output)
+  msynth.hrps.to_csv(output)
+  print("DONE")
 
 
 if __name__ == "__main__":
