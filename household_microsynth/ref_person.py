@@ -1,6 +1,5 @@
 """ Household ref person microsynthesis """
 
-from random import randint
 import numpy as np
 import pandas as pd
 
@@ -27,13 +26,13 @@ class ReferencePerson:
     self.__get_census_data()
 
     # initialise table and index
-    categories = ["Area", "LC4605_C_NSSEC", "LC4605_C_TENHUK11", "LC4201_C_AGE", "LC4201_C_ETHPUK11", 
-                   "QS111_C_HHLSHUK11", "LC1102_C_LARPUK11"]
+    categories = ["Area", "LC4605_C_NSSEC", "LC4605_C_TENHUK11", "LC4201_C_AGE", "LC4201_C_ETHPUK11",
+                  "QS111_C_HHLSHUK11", "LC1102_C_LARPUK11"]
 
-    # LC4605_C_NSSEC  LC4605_C_TENHUK11  
+    # LC4605_C_NSSEC  LC4605_C_TENHUK11
     # LC4201_C_AGE  LC4201_C_ETHPUK11  [C_TENHUK11]
-    # QS111_C_HHLSHUK11 
-    # [C_AGE] LC1102_C_LARPUK11  
+    # QS111_C_HHLSHUK11
+    # [C_AGE] LC1102_C_LARPUK11
 
     self.num_hrps = sum(self.lc4605.OBS_VALUE)
     self.hrps = pd.DataFrame(columns=categories)
@@ -97,24 +96,24 @@ class ReferencePerson:
                             ["C_AGE", "C_ETHPUK11", "C_TENHUK11"],
                             [len(self.age_index), len(self.eth_index), len(self.tenure_index)],
                             "OBS_VALUE")
-    # collapse age 
+    # collapse age
     m4201 = np.sum(m4201, axis=0)
 
     # now check LC4605 total matches LC4201 and adjust as necessary (ensuring partial sum in tenure dimension is preserved)
     m4605_sum = np.sum(m4605)
     m4201_sum = np.sum(m4201)
-    if m4605_sum != m4201_sum: 
+    if m4605_sum != m4201_sum:
       print("LC4605:"+str(m4605_sum)+"->"+str(m4201_sum), end="")
       tenure_4201 = np.sum(m4201, axis=0)
       nssec_4605_adj = humanleague.prob2IntFreq(np.sum(m4605, axis=1) / m4605_sum, m4201_sum)["freq"]
       #print(m4605)
       m4605_adj = humanleague.qisi(m4605.astype(float), [np.array([0]), np.array([1])], [nssec_4605_adj, tenure_4201])
-      if type(m4605_adj) is str:
+      if isinstance(m4605_adj, str):
         print(m4605_adj)
       assert m4605_adj["conv"]
       m4605 = m4605_adj["result"]
       #print(m4605)
-      
+
     lifestage = self.qs111.loc[self.qs111.GEOGRAPHY_CODE == area].copy()
     # unmap indices
     # TODO might be quicker to unmap the entire table upfront?
@@ -146,16 +145,12 @@ class ReferencePerson:
                             "OBS_VALUE")
     #print(m1102)
 
-    p0 = humanleague.qis([np.array([0, 1]), np.array([2, 1]), np.array([3]), np.array([4])], [m4605, m4201, mq111, m1102])
-    if type(p0) is str:
-      print(p0)
-    assert p0["conv"]
+    pop = humanleague.qis([np.array([0, 1]), np.array([2, 1]), np.array([3]), np.array([4])], [m4605, m4201, mq111, m1102])
+    if isinstance(pop, str):
+      print(pop)
+    assert pop["conv"]
 
-    table = humanleague.flatten(p0["result"])
-
-    categories = ["Area", "LC4605_C_NSSEC", "LC4605_C_TENHUK11", "LC4201_C_AGE", "LC4201_C_ETHPUK11", 
-                   "QS111_C_HHLSHUK11", "LC1102_C_LARPUK11"]
-    
+    table = humanleague.flatten(pop["result"])
 
     chunk = pd.DataFrame(columns=self.hrps.columns.values)
     chunk.Area = np.repeat(area, len(table[0]))
@@ -168,7 +163,7 @@ class ReferencePerson:
     self.hrps = self.hrps.append(chunk)
 
   def __get_census_data(self):
-    """ 
+    """
     Retrieves census tables for the specified geography
     checks for locally cached data or calls nomisweb API
     """
@@ -249,4 +244,3 @@ class ReferencePerson:
     self.lc1102 = self.api.get_data("LC1102EW", table, query_params)
 
     # LC6115 HRP: composition by NSSEC?
-

@@ -96,7 +96,7 @@ def communal_economic_status(communal_type):
     23: 8,
     24: 8,
     25: 8,
-    26: 9, 
+    26: 9,
     27: -1,
     28: 8,
     29: -1,
@@ -108,7 +108,7 @@ def communal_economic_status(communal_type):
   }
   return communal_econ_map[communal_type]
 
-# TODO asserts are not idea here as it will bale immediately
+# TODO asserts are not the best idea here as it will bale immediately
 def check_hh(msynth, total_occ_dwellings, total_households, total_communal, total_household_poplb, total_communal_pop):
   # correct number of dwellings
   #print(len(msynth.dwellings), msynth.total_dwellings)
@@ -208,8 +208,61 @@ def check_hh(msynth, total_occ_dwellings, total_households, total_communal, tota
 
   return True
 
-
 def check_hrp(msynth, total_hrps):
   # correct number of household ref personsl_dwellings)
   assert len(msynth.hrps) == total_hrps
+  failures = []
+
+  # check area totals
+  areas = msynth.lc4201.GEOGRAPHY_CODE.unique()
+  for area in areas:
+    if len(msynth.hrps[msynth.hrps.Area == area]) != sum(msynth.lc4201[msynth.lc4201.GEOGRAPHY_CODE == area].OBS_VALUE):
+      failures.append("Area " + area + " total mismatch: "
+                      + str(len(msynth.hrps[msynth.hrps.Area == area])) + " vs " 
+                      + str(sum(msynth.lc4201[msynth.lc4201.GEOGRAPHY_CODE == area].OBS_VALUE)))
+
+  # check NSSEC totals (disabled due to LC4605 inconsistency)
+  # nssecs = msynth.lc4605.C_NSSEC.unique()
+  # for nssec in nssecs:
+  #   if len(msynth.hrps[msynth.hrps.LC4605_C_NSSEC == nssec]) != sum(msynth.lc4605[msynth.lc4605.C_NSSEC == nssec].OBS_VALUE):
+  #     failures.append("NSSEC " + str(nssec) + " total mismatch: "
+  #                     + str(len(msynth.hrps[msynth.hrps.LC4605_C_NSSEC == nssec])) + " vs " 
+  #                     + str(sum(msynth.lc4605[msynth.lc4605.C_NSSEC == nssec].OBS_VALUE)))
+
+  # check tenure totals
+  tenures = msynth.lc4201.C_TENHUK11.unique()
+  for tenure in tenures:
+    if len(msynth.hrps[msynth.hrps.LC4605_C_TENHUK11 == tenure]) != sum(msynth.lc4201[msynth.lc4201.C_TENHUK11 == tenure].OBS_VALUE):
+      failures.append("Tenure " + str(tenure) + " total mismatch: "
+                      + str(len(msynth.hrps[msynth.hrps.LC4605_C_TENHUK11 == tenure])) + " vs " 
+                      + str(sum(msynth.lc4201[msynth.lc4201.C_TENHUK11 == tenure].OBS_VALUE)))
+
+  # check ethnicity totals
+  eths = msynth.lc4201.C_ETHPUK11.unique()
+  for eth in eths:
+    if len(msynth.hrps[msynth.hrps.LC4201_C_ETHPUK11 == eth]) != sum(msynth.lc4201[msynth.lc4201.C_ETHPUK11 == eth].OBS_VALUE):
+      failures.append("Ethnicity " + str(eth) + " total mismatch: "
+                      + str(len(msynth.hrps[msynth.hrps.LC4201_C_ETHPUK11 == eth])) + " vs " 
+                      + str(sum(msynth.lc4201[msynth.lc4201.C_ETHPUK11 == eth].OBS_VALUE)))
+
+  # check lifestage totals
+  lifestages = msynth.qs111.C_HHLSHUK11.unique()
+  for lifestage in lifestages:
+    if len(msynth.hrps[msynth.hrps.QS111_C_HHLSHUK11 == lifestage]) != sum(msynth.qs111[msynth.qs111.C_HHLSHUK11 == lifestage].OBS_VALUE):
+      failures.append("Lifestage " + str(lifestage) + " total mismatch: "
+                      + str(len(msynth.hrps[msynth.hrps.QS111_C_HHLSHUK11 == lifestage])) + " vs " 
+                      + str(sum(msynth.qs111[msynth.qs111.C_HHLSHUK11 == lifestage].OBS_VALUE)))
+
+  # check living arrangement totals
+  livarrs = msynth.qs111.C_HHLSHUK11.unique()
+  for livarr in livarrs:
+    if len(msynth.hrps[msynth.hrps.LC1102_C_LARPUK11 == livarr]) != sum(msynth.lc1102[msynth.lc1102.C_LARPUK11 == livarr].OBS_VALUE):
+      failures.append("Living arr " + str(livarr) + " total mismatch: "
+                      + str(len(msynth.hrps[msynth.hrps.LC1102_C_LARPUK11 == livarr])) + " vs " 
+                      + str(sum(msynth.lc1102[msynth.lc1102.C_LARPUK11 == livarr].OBS_VALUE)))
+
+  if failures:
+    print("\n".join(failures))
+    raise RuntimeError("Consistency checks failed, see log for further details")
+
   return True

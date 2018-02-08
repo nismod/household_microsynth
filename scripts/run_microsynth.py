@@ -29,11 +29,12 @@ OUTPUT_DIR = "./data"
 # LC4601EW - Tenure by economic activity by age - Household Reference Persons
 # TODO: differentiate between purpose-built and converted flats?
 
-def main(region, resolution):
+def main(params):
   """ Entry point """
-  #do_hh(region, resolution)
-  do_hrp(region, resolution)
-
+  if not params.no_hh: 
+    do_hh(params.region, params.resolution)
+  if not params.no_hrp:
+    do_hrp(params.region, params.resolution)
 
 def do_hh(region, resolution):
   """ Do households """
@@ -111,11 +112,11 @@ def do_hrp(region, resolution):
   print("Microsynthesis region:", region)
   print("Microsynthesis resolution:", resolution)
   # init microsynthesis
-  #try:
-  msynth = hrp_msynth.ReferencePerson(region, resolution, CACHE_DIR)
-  #except Exception as error:
-  #  print(error)
-  #  return
+  try:
+    msynth = hrp_msynth.ReferencePerson(region, resolution, CACHE_DIR)
+  except Exception as error:
+    print(error)
+    return
 
   # Do some basic checks on totals 
   # TODO this should probably be in ref_person.py
@@ -132,11 +133,11 @@ def do_hrp(region, resolution):
   print("Number of geographical areas: ", len(msynth.lc4605.GEOGRAPHY_CODE.unique()))
 
   # generate the population
-  #try:
-  msynth.run()
-  #except Exception as error:
-  #  print(error)
-  #  return
+  try:
+    msynth.run()
+  except Exception as error:
+    print(error)
+    return
 
   print("Done. Exec time(s): ", time.time() - start_time)
 
@@ -157,8 +158,10 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="household microsynthesis")
   parser.add_argument("region", type=str, help="the ONS code of the local authority district (LAD) to be covered by the microsynthesis, e.g. E09000001")
   parser.add_argument("resolution", type=str, help="the geographical resolution of the microsynthesis (e.g. OA11, LSOA11, MSOA11)")
-  # TODO add flags for hh and/or hrp 
+  # flags for omitting hh and or hrp 
+  parser.add_argument("--no-hh", action='store_const', const=True, default=False, help="skip household generation")
+  parser.add_argument("--no-hrp", action='store_const', const=True, default=False, help="skip household ref person generation")
 
   args = parser.parse_args()
 
-  main(args.region, args.resolution)
+  main(args)

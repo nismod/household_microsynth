@@ -29,8 +29,11 @@ class Test(TestCase):
     resolution = "MSOA11"
     cache = "./cache"
     microsynth = hrp_msynth.ReferencePerson(region, resolution, cache)
-
+    num_occ_dwellings = 4385
+    
     # any problems and assert will fail
     microsynth.run()
+
+    self.assertTrue(Utils.check_hrp(microsynth, num_occ_dwellings))
 
   # TODO more tests
