@@ -159,12 +159,25 @@ class Household:
     Utils.unmap(econ.C_TENHUK11, tenure_map)
 
     # econ counts often slightly lower, need to tweak
-    econ = Utils.adjust(econ, tenure_eth_car)
+    ##econ = Utils.adjust(econ, tenure_eth_car)
 
     m4605 = Utils.unlistify(econ,
                             ["C_TENHUK11", "C_NSSEC"],
                             [len(tenure_map), len(econ_map)],
                             "OBS_VALUE")
+
+    m4605_sum = np.sum(m4605)
+    m4202_sum = np.sum(m4202)
+
+    if m4605_sum != m4202_sum:
+      print("LC4605:"+str(m4605_sum)+"->"+str(m4202_sum), end="")
+      tenure_4202 = np.sum(m4202, axis=(1,2))
+      nssec_4605_adj = humanleague.prob2IntFreq(np.sum(m4605, axis=0) / m4605_sum, m4202_sum)["freq"]
+      m4605_adj = humanleague.qisi(m4605.astype(float), [np.array([0]), np.array([1])], [tenure_4202, nssec_4605_adj])
+      if isinstance(m4605_adj, str):
+        print(m4605_adj)
+      assert m4605_adj["conv"]
+      m4605 = m4605_adj["result"]
 
     # no seed constraint so just use QIS
     p1 = humanleague.qis([np.array([0, 1, 2, 3, 4]), np.array([0, 5, 6]), np.array([0, 7, 8]), np.array([0, 9])], [p0["result"], m4402, m4202, m4605])
@@ -209,7 +222,7 @@ class Household:
     chunk.LC4408_C_AHTHUK11 = np.repeat(5, num_communal) # communal implies multi-person household
     chunk.LC4402_C_CENHEATHUK11 = np.repeat(2, num_communal) # assume all communal are centrally heated
     chunk.LC4402_C_TYPACCOM = np.repeat(self.NOTAPPLICABLE, num_communal)
-    chunk.LC4202EW_C_ETHHUK11 = np.repeat(5, num_communal) # mixed/multiple
+    chunk.LC4202EW_C_ETHHUK11 = np.repeat(self.UNKNOWN, num_communal)
     chunk.LC4202EW_C_CARSNO = np.repeat(1, num_communal) # no cars (blanket assumption)
 
     index = 0
@@ -249,7 +262,7 @@ class Household:
     chunk.LC4404EW_C_SIZHUK11 = np.repeat(0, n_unocc)
     chunk.LC4408_C_AHTHUK11 = np.repeat(self.UNKNOWN, n_unocc)
     chunk.LC4402_C_TYPACCOM = np.repeat(self.NOTAPPLICABLE, n_unocc)
-    chunk.LC4202EW_C_ETHHUK11 = np.repeat(self.UNKNOWN, n_unocc) # mixed/multiple
+    chunk.LC4202EW_C_ETHHUK11 = np.repeat(self.UNKNOWN, n_unocc)
     chunk.LC4202EW_C_CARSNO = np.repeat(1, n_unocc) # no cars
     chunk.QS420EW_CELL = np.repeat(self.NOTAPPLICABLE, n_unocc)
     chunk.CommunalSize = np.repeat(self.NOTAPPLICABLE, n_unocc)
