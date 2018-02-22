@@ -31,7 +31,7 @@ OUTPUT_DIR = "./data"
 
 def main(params):
   """ Entry point """
-  if not params.no_hh: 
+  if not params.no_hh:
     do_hh(params.region, params.resolution)
   if not params.no_hrp:
     do_hrp(params.region, params.resolution)
@@ -104,7 +104,7 @@ def do_hh(region, resolution):
 
 def do_hrp(region, resolution):
   """ Do household ref persons """
-  
+
   # # start timing
   start_time = time.time()
 
@@ -118,15 +118,15 @@ def do_hrp(region, resolution):
     print(error)
     return
 
-  # Do some basic checks on totals 
+  # Do some basic checks on totals
   # TODO this should probably be in ref_person.py
-  total_hrps = sum(msynth.lc4201.OBS_VALUE) 
+  total_hrps = sum(msynth.lc4201.OBS_VALUE)
   assert sum(msynth.qs111.OBS_VALUE) == total_hrps
   assert sum(msynth.lc1102.OBS_VALUE) == total_hrps
 
   if sum(msynth.lc4605.OBS_VALUE) != total_hrps:
     lc4605_hrps = sum(msynth.lc4605.OBS_VALUE)
-    print("Count mismatch in table LC4605 ("+str(lc4605_hrps)+ ") will be adjusted. (Likely missing HRPs aged under 16)" )
+    print("Count mismatch in table LC4605 ("+str(lc4605_hrps)+ ") will be adjusted. (Likely missing HRPs aged under 16)")
 
   print("Households: ", total_hrps)
 
@@ -158,7 +158,7 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="household microsynthesis")
   parser.add_argument("region", type=str, help="the ONS code of the local authority district (LAD) to be covered by the microsynthesis, e.g. E09000001")
   parser.add_argument("resolution", type=str, help="the geographical resolution of the microsynthesis (e.g. OA11, LSOA11, MSOA11)")
-  # flags for omitting hh and or hrp 
+  # flags for omitting hh and or hrp
   parser.add_argument("--no-hh", action='store_const', const=True, default=False, help="skip household generation")
   parser.add_argument("--no-hrp", action='store_const', const=True, default=False, help="skip household ref person generation")
 
