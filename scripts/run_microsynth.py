@@ -104,7 +104,7 @@ def do_hh(region, resolution):
     print("failed")
   output = OUTPUT_DIR + "/hh_" + region + "_" + resolution + ".csv"
   print("Writing synthetic population to", output)
-  msynth.dwellings.to_csv(output)
+  msynth.dwellings.to_csv(output, index_label="HID")
   print("DONE")
 
 def do_hrp(region, resolution):
