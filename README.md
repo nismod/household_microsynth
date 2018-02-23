@@ -152,7 +152,7 @@ All categories are constrained at a minimum by geographical resolution and dwell
 - The composition of residences is multi-person.
 - All communal residences are assumed to have central heating.
 - The economic status of communal residents is generally unknown, but sometimes can be inferred by the residence type.
-- The ethnicity of the communal residence is mixed/multiple.
+- The ethnicity of the communal residence is __unknown__.
 - No cars is assumed.
 
 ### Unoccupied Households

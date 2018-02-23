@@ -188,12 +188,11 @@ class ReferencePerson:
     # tables:
 
     # LC4605EW Tenure by NS-SeC - Household Reference Persons
-    table = "NM_1001_1"
     query_params = common_params.copy()
     query_params["C_TENHUK11"] = "2,3,5,6"
     query_params["C_NSSEC"] = "1...9"
     query_params["select"] = "GEOGRAPHY_CODE,C_NSSEC,C_TENHUK11,OBS_VALUE"
-    self.lc4605 = self.api.get_data("LC4605EW", table, query_params)
+    self.lc4605 = self.api.get_data("LC4605EW", query_params)
     #self.lc4605.to_csv("LC4605.csv")
 
     # LC4201EW  Tenure by ethnic group by age - Household Reference Persons
@@ -204,13 +203,12 @@ class ReferencePerson:
     #   "3": "Age 50 to 64",
     #   "4": "Age 65 and over"
     # },
-    table = "NM_879_1"
     query_params = common_params.copy()
     query_params["C_TENHUK11"] = "2,3,5,6"
     query_params["C_AGE"] = "1...4"
     query_params["C_ETHPUK11"] = "2...8"
     query_params["select"] = "GEOGRAPHY_CODE,C_AGE,C_ETHPUK11,C_TENHUK11,OBS_VALUE"
-    self.lc4201 = self.api.get_data("LC4201EW", table, query_params)
+    self.lc4201 = self.api.get_data("LC4201EW", query_params)
 
     # QS111EW - Household lifestage
     # Stages correspond to:
@@ -220,12 +218,11 @@ class ReferencePerson:
     # 55-64        3*       4*
     # >=65         4        5
     # * overlaps two categories
-    table = "NM_511_1"
     query_params = common_params.copy()
     query_params["C_HHLSHUK11"] = "2,3,4,6,7,8,10,11,12,14,15,16"
     query_params["RURAL_URBAN"] = "0"
     query_params["select"] = "GEOGRAPHY_CODE,C_HHLSHUK11,OBS_VALUE"
-    self.qs111 = self.api.get_data("QS111EW", table, query_params)
+    self.qs111 = self.api.get_data("QS111EW", query_params)
 
     # LC1102EW - Living arrangements by age - Household Reference Persons
     # NOTE DIFFERENT AGE CATEGORIES
@@ -236,11 +233,10 @@ class ReferencePerson:
     #   "4": "Age 50 to 64",
     #   "5": "Age 65 and over"
     # },
-    table = "NM_871_1"
     query_params = common_params.copy()
     query_params["C_AGE"] = "1...5"
     query_params["C_LARPUK11"] = "2,3,5,6,7,8,9"
     query_params["select"] = "GEOGRAPHY_CODE,C_AGE,C_LARPUK11,OBS_VALUE"
-    self.lc1102 = self.api.get_data("LC1102EW", table, query_params)
+    self.lc1102 = self.api.get_data("LC1102EW", query_params)
 
     # LC6115 HRP: composition by NSSEC?
