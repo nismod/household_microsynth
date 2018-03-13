@@ -82,8 +82,7 @@ def do_hh(region, resolution):
 
   if sum(msynth.lc4605.OBS_VALUE) != total_occ_dwellings:
     lc4605_hrps = sum(msynth.lc4605.OBS_VALUE)
-    print("Count mismatch in table LC4605 ("+str(lc4605_hrps)+ ") will be adjusted. (Likely missing HRPs aged under 16)" )
-
+    print("Count mismatch in table LC4605 ("+str(lc4605_hrps)+ ") will be adjusted. (Likely missing HRPs aged under 16)")
 
   print("Number of geographical areas: ", len(msynth.lc4402.GEOGRAPHY_CODE.unique()))
 
@@ -104,7 +103,6 @@ def do_hh(region, resolution):
     print("failed")
   output = OUTPUT_DIR + "/hh_" + region + "_" + resolution + ".csv"
   print("Writing synthetic population to", output)
-  msynth.dwellings.reindex()
   msynth.dwellings.to_csv(output, index_label="HID")
   print("DONE")
 

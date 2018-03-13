@@ -201,7 +201,7 @@ class Household:
     chunk.LC4202EW_C_CARSNO = Utils.remap(table[8], cars_map)
     chunk.LC4605EW_C_NSSEC = Utils.remap(table[9], econ_map)
     #print(chunk.head())
-    self.dwellings = self.dwellings.append(chunk)
+    self.dwellings = self.dwellings.append(chunk, ignore_index=True)
 
   def __add_communal(self, area):
 
@@ -246,7 +246,7 @@ class Household:
         index += 1
 
     #print(chunk.head())
-    self.dwellings = self.dwellings.append(chunk)
+    self.dwellings = self.dwellings.append(chunk, ignore_index=True)
 
   # unoccupied, should be one entry per area
   # sample from the occupied houses
@@ -270,15 +270,12 @@ class Household:
 
     occ = self.dwellings.loc[(self.dwellings.Area == area) & (self.dwellings.QS420EW_CELL == self.NOTAPPLICABLE)]
 
-    for i in range(0, n_unocc):
-      s = occ.iloc[occ.index.values[randint(0, len(occ)-1)]]
+    s = occ.sample(n_unocc).reset_index()
+    chunk.LC4404EW_C_ROOMS = s.LC4404EW_C_ROOMS
+    chunk.LC4405EW_C_BEDROOMS = s.LC4405EW_C_BEDROOMS
+    chunk.LC4402_C_CENHEATHUK11 = s.LC4402_C_CENHEATHUK11
 
-      chunk.LC4404EW_C_ROOMS.at[i] = s.LC4404EW_C_ROOMS
-      chunk.LC4405EW_C_BEDROOMS.at[i] = s.LC4405EW_C_BEDROOMS
-      chunk.LC4402_C_CENHEATHUK11.at[i] = s.LC4402_C_CENHEATHUK11
-
-    #print(chunk)
-    self.dwellings = self.dwellings.append(chunk)
+    self.dwellings = self.dwellings.append(chunk, ignore_index=True)
 
   # Retrieves census tables for the specified geography
   # checks for locally cached data or calls nomisweb API
