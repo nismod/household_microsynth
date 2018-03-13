@@ -101,7 +101,7 @@ def do_hh(region, resolution):
     print("ok")
   else:
     print("failed")
-  output = OUTPUT_DIR + "/hh_" + region + "_" + resolution + ".csv"
+  output = OUTPUT_DIR + "/hh_" + region + "_" + resolution + "_2011.csv"
   print("Writing synthetic population to", output)
   msynth.dwellings.to_csv(output, index_label="HID")
   print("DONE")
@@ -151,7 +151,7 @@ def do_hrp(region, resolution):
     print("ok")
   else:
     print("failed")
-  output = OUTPUT_DIR + "/hrp_" + region + "_" + resolution + ".csv"
+  output = OUTPUT_DIR + "/hrp_" + region + "_" + resolution + "_2011.csv"
   print("Writing synthetic population to", output)
   msynth.hrps.to_csv(output)
   print("DONE")
