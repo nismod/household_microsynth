@@ -17,7 +17,7 @@ if [ ! -f ./apikey.sh ]; then
 fi
 . ./apikey.sh
 
-source activate testenv1
+source activate default
 
 qsub_params="-l h_rt=8:0:0"
 
