@@ -234,11 +234,7 @@ class Household:
       if establishments == 1:
         occ_array = [occupants]
       else:
-        # TODO permit zero total in prob2IntFreq to avoid this branch
-        if occupants:
-          occ_array = humanleague.prob2IntFreq(np.full(establishments, 1.0 / establishments), occupants)["freq"]
-        else:
-          occ_array = np.zeros(establishments)
+        occ_array = humanleague.prob2IntFreq(np.full(establishments, 1.0 / establishments), occupants)["freq"]
       for j in range(0, establishments):
         chunk.QS420EW_CELL.at[index] = area_communal.at[area_communal.index[i], "CELL"]
         chunk.CommunalSize.at[index] = occ_array[j]
