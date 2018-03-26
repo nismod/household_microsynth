@@ -33,7 +33,7 @@ def main(params):
   """ Entry point """
   if not params.no_hh:
     do_hh(params.region, params.resolution)
-  if not params.no_hrp:
+  if params.do_hrp:
     do_hrp(params.region, params.resolution)
 
 def do_hh(region, resolution):
@@ -164,7 +164,7 @@ if __name__ == "__main__":
   parser.add_argument("resolution", type=str, help="the geographical resolution of the microsynthesis (e.g. OA11, LSOA11, MSOA11)")
   # flags for omitting hh and or hrp
   parser.add_argument("--no-hh", action='store_const', const=True, default=False, help="skip household generation")
-  parser.add_argument("--no-hrp", action='store_const', const=True, default=False, help="skip household ref person generation")
+  parser.add_argument("--do-hrp", action='store_const', const=True, default=False, help="do household ref person generation")
 
   args = parser.parse_args()
 
