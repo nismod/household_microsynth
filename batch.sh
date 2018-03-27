@@ -1,11 +1,11 @@
 #!/bin/bash
 
-if [ ! -f ./apikey.sh ]; then
-  echo "api key not found. Please specify your Nomisweb API key in ./apikey.sh, e.g.:"
+if [ ! -f ~/apikey.sh ]; then
+  echo "api key not found. Please specify your Nomisweb API key in ~/apikey.sh, e.g.:"
   echo "export NOMIS_API_KEY=0x0123456789abcdef0123456789abcdef01234567"
   exit 1
 fi
-. ./apikey.sh
+. ~/apikey.sh
 
 source activate default
 
@@ -50,8 +50,8 @@ for region in $regions; do
   if [ ! -f $outfile ]; then
     export REGION=$region
     echo Submitting job for $REGION
-    qsub $qsub_params run.sh
-    sleep 10 
+    qsub -o logs -e logs $qsub_params run.sh
+    sleep 5 
   else
     echo $region done, not resubmitting
   fi
