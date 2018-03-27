@@ -266,7 +266,7 @@ class Household:
 
     occ = self.dwellings.loc[(self.dwellings.Area == area) & (self.dwellings.QS420EW_CELL == self.NOTAPPLICABLE)]
 
-    s = occ.sample(n_unocc).reset_index()
+    s = occ.sample(n_unocc, replace=True).reset_index()
     chunk.LC4404EW_C_ROOMS = s.LC4404EW_C_ROOMS
     chunk.LC4405EW_C_BEDROOMS = s.LC4405EW_C_BEDROOMS
     chunk.LC4402_C_CENHEATHUK11 = s.LC4402_C_CENHEATHUK11
