@@ -193,7 +193,9 @@ def check_hh(msynth, total_occ_dwellings, total_households, total_communal, tota
                              & (msynth.dwellings.QS420EW_CELL == msynth.NOTAPPLICABLE)]) >= sum(msynth.lc4605[msynth.lc4605["C_NSSEC"] == i].OBS_VALUE)
 
   # Ethnicity (ignoring communal and unoccupied)
-  assert np.array_equal(sorted(msynth.dwellings[msynth.dwellings.LC4202EW_C_ETHHUK11 != msynth.UNKNOWN].LC4202EW_C_ETHHUK11.unique()), msynth.lc4202["C_ETHHUK11"].unique())
+  # Need to omit OB_VALIUE=0 entries in LC4202 as can break regions where not all ethnicities present e.g. Scilly Isles
+  assert np.array_equal(sorted(msynth.dwellings[msynth.dwellings.LC4202EW_C_ETHHUK11 != msynth.UNKNOWN].LC4202EW_C_ETHHUK11.unique()), 
+                        sorted(msynth.lc4202[msynth.lc4202.OBS_VALUE>0].C_ETHHUK11.unique()))
   for i in msynth.lc4202["C_ETHHUK11"].unique():
     assert len(msynth.dwellings[(msynth.dwellings.LC4202EW_C_ETHHUK11 == i)
                              & (msynth.dwellings.LC4404EW_C_SIZHUK11 != 0)

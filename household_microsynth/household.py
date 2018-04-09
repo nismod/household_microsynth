@@ -233,11 +233,7 @@ class Household:
       if establishments == 1:
         occ_array = [occupants]
       else:
-        # TODO permit zero total in prob2IntFreq to avoid this branch
-        if occupants:
-          occ_array = humanleague.prob2IntFreq(np.full(establishments, 1.0 / establishments), occupants)["freq"]
-        else:
-          occ_array = np.zeros(establishments)
+        occ_array = humanleague.prob2IntFreq(np.full(establishments, 1.0 / establishments), occupants)["freq"]
       for j in range(0, establishments):
         chunk.QS420EW_CELL.at[index] = area_communal.at[area_communal.index[i], "CELL"]
         chunk.CommunalSize.at[index] = occ_array[j]
@@ -269,7 +265,7 @@ class Household:
 
     occ = self.dwellings.loc[(self.dwellings.Area == area) & (self.dwellings.QS420EW_CELL == self.NOTAPPLICABLE)]
 
-    s = occ.sample(n_unocc).reset_index()
+    s = occ.sample(n_unocc, replace=True).reset_index()
     chunk.LC4404EW_C_ROOMS = s.LC4404EW_C_ROOMS
     chunk.LC4405EW_C_BEDROOMS = s.LC4405EW_C_BEDROOMS
     chunk.LC4402_C_CENHEATHUK11 = s.LC4402_C_CENHEATHUK11
