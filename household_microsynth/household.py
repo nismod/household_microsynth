@@ -1,6 +1,5 @@
 """ Household microsynthesis """
 
-from random import randint
 import numpy as np
 import pandas as pd
 
@@ -171,7 +170,7 @@ class Household:
 
     if m4605_sum != m4202_sum:
       print("LC4605:"+str(m4605_sum)+"->"+str(m4202_sum), end="")
-      tenure_4202 = np.sum(m4202, axis=(1,2))
+      tenure_4202 = np.sum(m4202, axis=(1, 2))
       nssec_4605_adj = humanleague.prob2IntFreq(np.sum(m4605, axis=0) / m4605_sum, m4202_sum)["freq"]
       m4605_adj = humanleague.qisi(m4605.astype(float), [np.array([0]), np.array([1])], [tenure_4202, nssec_4605_adj])
       if isinstance(m4605_adj, str):
@@ -219,7 +218,7 @@ class Household:
     chunk.LC4404EW_C_ROOMS = np.repeat(self.UNKNOWN, num_communal)
     chunk.LC4404EW_C_SIZHUK11 = np.repeat(self.UNKNOWN, num_communal)
     chunk.LC4405EW_C_BEDROOMS = np.repeat(self.UNKNOWN, num_communal)
-    chunk.LC4408_C_AHTHUK11 = np.repeat(5, num_communal) # communal implies multi-person household
+    chunk.LC4408_C_AHTHUK11 = np.repeat(self.UNKNOWN, num_communal) # communal not considered separately to multi-person household
     chunk.LC4402_C_CENHEATHUK11 = np.repeat(2, num_communal) # assume all communal are centrally heated
     chunk.LC4402_C_TYPACCOM = np.repeat(self.NOTAPPLICABLE, num_communal)
     chunk.LC4202EW_C_ETHHUK11 = np.repeat(self.UNKNOWN, num_communal)
