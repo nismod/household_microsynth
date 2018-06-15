@@ -295,7 +295,6 @@ class Household:
   def __get_census_data_sc(self):
     #print(self.api_sc.get_metadata("LC4402SC", self.resolution))
     #print(self.api_sc.get_metadata("LC4404SC", self.resolution))
-
     self.lc4402 = self.api_sc.get_data("LC4402SC", self.resolution, self.region)
     self.lc4404 = self.api_sc.get_data("LC4404SC", self.resolution, self.region)
 
@@ -303,20 +302,21 @@ class Household:
     #print(self.api_sc.get_metadata("LC4408SC", self.resolution)) not available
     #print(self.api_sc.get_metadata("LC1105SC", self.resolution)) not available
 
+    # print(self.api_sc.get_metadata("KS401SC", self.resolution))
     # print(self.api_sc.get_metadata("LC4202SC", self.resolution))
     # print(self.api_sc.get_metadata("LC4605SC", self.resolution))
     # print(self.api_sc.get_metadata("QS420SC", self.resolution))
     # print(self.api_sc.get_metadata("QS421SC", self.resolution))
-
     self.ks401 = self.api_sc.get_data("KS401SC", self.resolution, self.region)
     self.lc4202 = self.api_sc.get_data("LC4202SC", self.resolution, self.region)
     self.lc4605 = self.api_sc.get_data("LC4605SC", self.resolution, self.region)
+
 
     # merge the two communal tables (so we have establishment and people counts)
     self.communal = self.api_sc.get_data("QS420SC", self.resolution, self.region)
     print(self.communal.head())
     qs421 = self.api_sc.get_data("QS421SC", self.resolution, self.region)
-    communal["CommunalSize"] = qs421.OBS_VALUE
+    self.communal["CommunalSize"] = qs421.OBS_VALUE
 
   def __get_census_data_ew(self):
     """ 
