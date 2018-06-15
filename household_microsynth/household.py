@@ -5,7 +5,7 @@ import pandas as pd
 
 import ukcensusapi.Nomisweb as Api
 import humanleague
-import household_microsynth.utils as Utils
+import household_microsynth.utils as utils
 
 class Household:
   """ Household microsynthesis """
@@ -98,11 +98,11 @@ class Household:
     tenure_rooms_occ = self.lc4404.loc[self.lc4404.GEOGRAPHY_CODE == area].copy()
     # unmap indices
     # TODO might be quicker to unmap the entire table upfront?
-    Utils.unmap(tenure_rooms_occ.C_TENHUK11, tenure_map)
-    Utils.unmap(tenure_rooms_occ.C_ROOMS, rooms_map)
-    Utils.unmap(tenure_rooms_occ.C_SIZHUK11, occupants_map)
+    utils.unmap(tenure_rooms_occ.C_TENHUK11, tenure_map)
+    utils.unmap(tenure_rooms_occ.C_ROOMS, rooms_map)
+    utils.unmap(tenure_rooms_occ.C_SIZHUK11, occupants_map)
 
-    m4404 = Utils.unlistify(tenure_rooms_occ,
+    m4404 = utils.unlistify(tenure_rooms_occ,
                             ["C_TENHUK11", "C_ROOMS", "C_SIZHUK11"],
                             [len(tenure_map), len(rooms_map), len(occupants_map)],
                             "OBS_VALUE")
@@ -110,57 +110,57 @@ class Household:
     tenure_beds_occ = self.lc4405.loc[self.lc4405.GEOGRAPHY_CODE == area].copy()
 
     # unmap indices
-    Utils.unmap(tenure_beds_occ.C_BEDROOMS, rooms_map)
-    Utils.unmap(tenure_beds_occ.C_TENHUK11, tenure_map)
-    Utils.unmap(tenure_beds_occ.C_SIZHUK11, occupants_map)
+    utils.unmap(tenure_beds_occ.C_BEDROOMS, rooms_map)
+    utils.unmap(tenure_beds_occ.C_TENHUK11, tenure_map)
+    utils.unmap(tenure_beds_occ.C_SIZHUK11, occupants_map)
 
-    m4405 = Utils.unlistify(tenure_beds_occ,
+    m4405 = utils.unlistify(tenure_beds_occ,
                             ["C_TENHUK11", "C_BEDROOMS", "C_SIZHUK11"],
                             [len(tenure_map), len(bedrooms_map), len(occupants_map)],
                             "OBS_VALUE")
 
     tenure_accom = self.lc4408.loc[self.lc4408.GEOGRAPHY_CODE == area].copy()
 
-    Utils.unmap(tenure_accom.C_TENHUK11, tenure_map)
-    Utils.unmap(tenure_accom.C_AHTHUK11, hhtype_map)
+    utils.unmap(tenure_accom.C_TENHUK11, tenure_map)
+    utils.unmap(tenure_accom.C_AHTHUK11, hhtype_map)
 
-    m4408 = Utils.unlistify(tenure_accom,
+    m4408 = utils.unlistify(tenure_accom,
                             ["C_TENHUK11", "C_AHTHUK11"],
                             [len(tenure_map), len(hhtype_map)],
                             "OBS_VALUE")
 
     # TODO relax IPF tolerance and maxiters when used within QISI?
     p0 = humanleague.qisi(constraints, [np.array([0, 1, 2]), np.array([0, 3, 2]), np.array([0, 4])], [m4404, m4405, m4408])
-    assert p0["conv"]
+    utils.check_humanleague_result(p0)
 
     tenure_ch_accom = self.lc4402.loc[self.lc4402.GEOGRAPHY_CODE == area].copy()
-    Utils.unmap(tenure_ch_accom.C_CENHEATHUK11, ch_map)
-    Utils.unmap(tenure_ch_accom.C_TENHUK11, tenure_map)
-    Utils.unmap(tenure_ch_accom.C_TYPACCOM, buildtype_map)
+    utils.unmap(tenure_ch_accom.C_CENHEATHUK11, ch_map)
+    utils.unmap(tenure_ch_accom.C_TENHUK11, tenure_map)
+    utils.unmap(tenure_ch_accom.C_TYPACCOM, buildtype_map)
 
-    m4402 = Utils.unlistify(tenure_ch_accom,
+    m4402 = utils.unlistify(tenure_ch_accom,
                             ["C_TENHUK11", "C_CENHEATHUK11", "C_TYPACCOM"],
                             [len(tenure_map), len(bedrooms_map), len(occupants_map)],
                             "OBS_VALUE")
 
     tenure_eth_car = self.lc4202.loc[self.lc4202.GEOGRAPHY_CODE == area].copy()
-    Utils.unmap(tenure_eth_car.C_ETHHUK11, eth_map)
-    Utils.unmap(tenure_eth_car.C_CARSNO, cars_map)
-    Utils.unmap(tenure_eth_car.C_TENHUK11, tenure_map)
+    utils.unmap(tenure_eth_car.C_ETHHUK11, eth_map)
+    utils.unmap(tenure_eth_car.C_CARSNO, cars_map)
+    utils.unmap(tenure_eth_car.C_TENHUK11, tenure_map)
 
-    m4202 = Utils.unlistify(tenure_eth_car,
+    m4202 = utils.unlistify(tenure_eth_car,
                             ["C_TENHUK11", "C_ETHHUK11", "C_CARSNO"],
                             [len(tenure_map), len(eth_map), len(cars_map)],
                             "OBS_VALUE")
 
     econ = self.lc4605.loc[self.lc4605.GEOGRAPHY_CODE == area].copy()
-    Utils.unmap(econ.C_NSSEC, econ_map)
-    Utils.unmap(econ.C_TENHUK11, tenure_map)
+    utils.unmap(econ.C_NSSEC, econ_map)
+    utils.unmap(econ.C_TENHUK11, tenure_map)
 
     # econ counts often slightly lower, need to tweak
-    ##econ = Utils.adjust(econ, tenure_eth_car)
+    ##econ = utils.adjust(econ, tenure_eth_car)
 
-    m4605 = Utils.unlistify(econ,
+    m4605 = utils.unlistify(econ,
                             ["C_TENHUK11", "C_NSSEC"],
                             [len(tenure_map), len(econ_map)],
                             "OBS_VALUE")
@@ -173,32 +173,39 @@ class Household:
       tenure_4202 = np.sum(m4202, axis=(1, 2))
       nssec_4605_adj = humanleague.prob2IntFreq(np.sum(m4605, axis=0) / m4605_sum, m4202_sum)["freq"]
       m4605_adj = humanleague.qisi(m4605.astype(float), [np.array([0]), np.array([1])], [tenure_4202, nssec_4605_adj])
-      if isinstance(m4605_adj, str):
-        print(m4605_adj)
-      assert m4605_adj["conv"]
+      # if isinstance(m4605_adj, str):
+      #   print(m4605_adj)
+      # if not m4605_adj["conv"]:
+      #   print(m4605.astype(float))
+      #   print(tenure_4202)
+      #   print(nssec_4605_adj)
+      #   print(np.sum(m4605, axis=0) / m4605_sum)
+      #   print(m4605_adj)     
+      #   raise RuntimeError("NS-SEC adjustment failed") 
+      utils.check_humanleague_result(m4605_adj)
       m4605 = m4605_adj["result"]
 
     # no seed constraint so just use QIS
     p1 = humanleague.qis([np.array([0, 1, 2, 3, 4]), np.array([0, 5, 6]), np.array([0, 7, 8]), np.array([0, 9])], [p0["result"], m4402, m4202, m4605])
     #p1 = humanleague.qis([np.array([0, 1, 2, 3]), np.array([0, 4, 5]), np.array([0, 6, 7])], [p0["result"], m4402, m4202])
-    assert p1["conv"]
+    utils.check_humanleague_result(p1)
 
     table = humanleague.flatten(p1["result"])
 
     chunk = pd.DataFrame(columns=self.dwellings.columns.values)
     chunk.Area = np.repeat(area, len(table[0]))
-    chunk.LC4402_C_TENHUK11 = Utils.remap(table[0], tenure_map)
+    chunk.LC4402_C_TENHUK11 = utils.remap(table[0], tenure_map)
     chunk.QS420EW_CELL = np.repeat(self.NOTAPPLICABLE, len(table[0]))
-    chunk.LC4404EW_C_ROOMS = Utils.remap(table[1], rooms_map)
-    chunk.LC4404EW_C_SIZHUK11 = Utils.remap(table[2], occupants_map)
-    chunk.LC4405EW_C_BEDROOMS = Utils.remap(table[3], bedrooms_map)
-    chunk.LC4408_C_AHTHUK11 = Utils.remap(table[4], hhtype_map)
-    chunk.LC4402_C_CENHEATHUK11 = Utils.remap(table[5], ch_map)
-    chunk.LC4402_C_TYPACCOM = Utils.remap(table[6], buildtype_map)
+    chunk.LC4404EW_C_ROOMS = utils.remap(table[1], rooms_map)
+    chunk.LC4404EW_C_SIZHUK11 = utils.remap(table[2], occupants_map)
+    chunk.LC4405EW_C_BEDROOMS = utils.remap(table[3], bedrooms_map)
+    chunk.LC4408_C_AHTHUK11 = utils.remap(table[4], hhtype_map)
+    chunk.LC4402_C_CENHEATHUK11 = utils.remap(table[5], ch_map)
+    chunk.LC4402_C_TYPACCOM = utils.remap(table[6], buildtype_map)
     chunk.CommunalSize = np.repeat(self.NOTAPPLICABLE, len(table[0]))
-    chunk.LC4202EW_C_ETHHUK11 = Utils.remap(table[7], eth_map)
-    chunk.LC4202EW_C_CARSNO = Utils.remap(table[8], cars_map)
-    chunk.LC4605EW_C_NSSEC = Utils.remap(table[9], econ_map)
+    chunk.LC4202EW_C_ETHHUK11 = utils.remap(table[7], eth_map)
+    chunk.LC4202EW_C_CARSNO = utils.remap(table[8], cars_map)
+    chunk.LC4605EW_C_NSSEC = utils.remap(table[9], econ_map)
     #print(chunk.head())
     self.dwellings = self.dwellings.append(chunk, ignore_index=True)
 
@@ -237,7 +244,7 @@ class Household:
       for j in range(0, establishments):
         chunk.QS420EW_CELL.at[index] = area_communal.at[area_communal.index[i], "CELL"]
         chunk.CommunalSize.at[index] = occ_array[j]
-        chunk.LC4605EW_C_NSSEC.at[index] = Utils.communal_economic_status(area_communal.at[area_communal.index[i], "CELL"])
+        chunk.LC4605EW_C_NSSEC.at[index] = utils.communal_economic_status(area_communal.at[area_communal.index[i], "CELL"])
         index += 1
 
     #print(chunk.head())
@@ -247,7 +254,8 @@ class Household:
   # sample from the occupied houses
   def __add_unoccupied(self, area):
     unocc = self.ks401.loc[(self.ks401.GEOGRAPHY_CODE == area) & (self.ks401.CELL == 6)]
-    assert len(unocc) == 1
+    if not len(unocc) == 1:
+      raise("ks401 problem - multiple unoccupied entries in table")
     n_unocc = unocc.at[unocc.index[0], "OBS_VALUE"]
     #print(n_unocc)
 
