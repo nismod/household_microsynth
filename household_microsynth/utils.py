@@ -18,6 +18,18 @@ def adjust(table, consistent_table):
         table.OBS_VALUE.at[index[randint(0, r-1)]] += 1
   return table
 
+def check_humanleague_result(result):
+  """
+  checks the result of the call to humanleague
+  """
+  # if its a string its an error
+  if isinstance(result, str):
+    raise RuntimeError(result)
+
+  if not result["conv"]:
+    print(result)  
+    raise RuntimeError("humanleague convergence failure") 
+
 def unmap(values, mapping):
   """
   Converts values (census category enumerations)

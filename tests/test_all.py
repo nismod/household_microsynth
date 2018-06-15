@@ -24,16 +24,16 @@ class Test(TestCase):
 
     self.assertTrue(Utils.check_hh(microsynth, num_occ_dwellings, num_dwellings, num_communal, pop_occupied, pop_communal))
 
-  def test_hrp1(self):
-    region = "E09000001"
-    resolution = "MSOA11"
-    cache = "./cache"
-    microsynth = hrp_msynth.ReferencePerson(region, resolution, cache)
-    num_occ_dwellings = 4385
+  # def test_hrp1(self):
+  #   region = "E09000001"
+  #   resolution = "MSOA11"
+  #   cache = "./cache"
+  #   microsynth = hrp_msynth.ReferencePerson(region, resolution, cache)
+  #   num_occ_dwellings = 4385
     
-    # any problems and assert will fail
-    microsynth.run()
+  #   # any problems and assert will fail
+  #   microsynth.run()
 
-    self.assertTrue(Utils.check_hrp(microsynth, num_occ_dwellings))
+  #   self.assertTrue(Utils.check_hrp(microsynth, num_occ_dwellings))
 
   # TODO more tests

@@ -6,6 +6,7 @@ run script for Household microsynthesis
 
 import time
 import argparse
+import traceback
 import humanleague
 #import ukcensusapi.Nomisweb as Api
 import household_microsynth.household as hh_msynth
@@ -49,15 +50,19 @@ def do_hh(region, resolution):
   try:
     msynth = hh_msynth.Household(region, resolution, CACHE_DIR)
   except Exception as error:
-    print(error)
+    print(traceback.format_exc())
     return
-
+  
   # Do some basic checks on totals
   total_occ_dwellings = sum(msynth.lc4402.OBS_VALUE)
-  assert sum(msynth.lc4404.OBS_VALUE) == total_occ_dwellings
-  assert sum(msynth.lc4405.OBS_VALUE) == total_occ_dwellings
-  assert sum(msynth.lc4408.OBS_VALUE) == total_occ_dwellings
-  assert sum(msynth.ks401[msynth.ks401.CELL == 5].OBS_VALUE) == total_occ_dwellings
+  if not sum(msynth.lc4404.OBS_VALUE) == total_occ_dwellings:
+    raise RuntimeError("LC4404 sum mismatch")
+  if not sum(msynth.lc4405.OBS_VALUE) == total_occ_dwellings:
+    raise RuntimeError("LC4405 sum mismatch")
+  if not sum(msynth.lc4408.OBS_VALUE) == total_occ_dwellings:
+    raise RuntimeError("LC4408 sum mismatch")
+  if not sum(msynth.ks401[msynth.ks401.CELL == 5].OBS_VALUE) == total_occ_dwellings:
+    raise RuntimeError("KS401 sum mismatch")
 
   total_population = sum(msynth.lc1105.OBS_VALUE)
   total_households = sum(msynth.ks401.OBS_VALUE)
@@ -90,7 +95,7 @@ def do_hh(region, resolution):
   try:
     msynth.run()
   except Exception as error:
-    print(error)
+    print(traceback.format_exc())
     return
 
   print("Done. Exec time(s): ", time.time() - start_time)
@@ -123,7 +128,7 @@ def do_hrp(region, resolution):
     return
 
   # Do some basic checks on totals
-  # TODO this should probably be in ref_person.py
+  # TODO this should probably be in ref_person.py (and use raise not assert)
   total_hrps = sum(msynth.lc4201.OBS_VALUE)
   assert sum(msynth.qs111.OBS_VALUE) == total_hrps
   assert sum(msynth.lc1102.OBS_VALUE) == total_hrps
