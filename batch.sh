@@ -46,7 +46,7 @@ mkdir -p data
 qsub_params="-l h_rt=8:0:0"
 
 for region in $regions; do
-  outfile="data/hh_"$region"_"$resolution".csv"
+  outfile="data/hh_"$region"_"$resolution"_2011.csv"
   if [ ! -f $outfile ]; then
     export REGION=$region
     echo Submitting job for $REGION
