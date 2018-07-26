@@ -17,7 +17,12 @@ if [ ! -f ~/apikey.sh ]; then
 fi
 . ~/apikey.sh
 
-source activate default
+# appropriate conda env should be activated manually
+#source activate default
+if [ "$CONDA_DEFAULT_ENV" == "" ]; then
+  echo Error, no conda env activated
+  exit 1
+fi
 
 qsub_params="-l h_rt=8:0:0"
 
@@ -26,7 +31,6 @@ if [ ! -f $outfile ]; then
   export REGION=$region
   echo Submitting job for $REGION
   qsub -o ./logs -e ./logs $qsub_params run.sh
-  sleep 10
 else
   echo $region done, not resubmitting
 fi
