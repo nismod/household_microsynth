@@ -133,7 +133,7 @@ class Household:
 
     # TODO relax IPF tolerance and maxiters when used within QISI?
     p0 = humanleague.qisi(constraints, [np.array([0, 1, 2]), np.array([0, 3, 2]), np.array([0, 4])], [m4404, m4405, m4408])
-    utils.check_humanleague_result(p0)
+    utils.check_humanleague_result(p0, [m4404, m4405, m4408])
 
     tenure_ch_accom = self.lc4402.loc[self.lc4402.GEOGRAPHY_CODE == area].copy()
     utils.unmap(tenure_ch_accom.C_CENHEATHUK11, ch_map)
@@ -175,22 +175,19 @@ class Household:
       tenure_4202 = np.sum(m4202, axis=(1, 2))
       nssec_4605_adj = humanleague.prob2IntFreq(np.sum(m4605, axis=0) / m4605_sum, m4202_sum)["freq"]
       m4605_adj = humanleague.qisi(m4605.astype(float), [np.array([0]), np.array([1])], [tenure_4202, nssec_4605_adj])
-      # if isinstance(m4605_adj, str):
-      #   print(m4605_adj)
-      # if not m4605_adj["conv"]:
-      #   print(m4605.astype(float))
-      #   print(tenure_4202)
-      #   print(nssec_4605_adj)
-      #   print(np.sum(m4605, axis=0) / m4605_sum)
-      #   print(m4605_adj)     
-      #   raise RuntimeError("NS-SEC adjustment failed") 
-      utils.check_humanleague_result(m4605_adj)
+      # Convergence problems can occur when e.g. one of the tenure rows is zero yet the marginal total is nonzero,
+      # Can get round this by adding a small number to the seed
+      # effectively allowing zero states to be occupied with a finite probability
+      if not m4605_adj["conv"]:
+        m4605_adj = humanleague.qisi(m4605.astype(float) + 1.0/m4202_sum, [np.array([0]), np.array([1])], [tenure_4202, nssec_4605_adj])
+
+      utils.check_humanleague_result(m4605_adj, [tenure_4202, nssec_4605_adj])
       m4605 = m4605_adj["result"]
 
     # no seed constraint so just use QIS
     p1 = humanleague.qis([np.array([0, 1, 2, 3, 4]), np.array([0, 5, 6]), np.array([0, 7, 8]), np.array([0, 9])], [p0["result"], m4402, m4202, m4605])
     #p1 = humanleague.qis([np.array([0, 1, 2, 3]), np.array([0, 4, 5]), np.array([0, 6, 7])], [p0["result"], m4402, m4202])
-    utils.check_humanleague_result(p1)
+    utils.check_humanleague_result(p1, [p0["result"], m4402, m4202, m4605])
 
     table = humanleague.flatten(p1["result"])
 
