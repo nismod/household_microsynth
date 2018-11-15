@@ -14,7 +14,7 @@ def _get_constraints(waveno=3):
   xtab = pd.read_csv(filename)
   xtab.rename({"size": "occupants", "count": "frequency"}, axis=1, inplace=True)
   # reorder cols
-  cols = ['tenure', 'rooms', 'occupants', 'beds', 'hhtype', 'frequency']
+  cols = ['tenure', 'rooms', 'occupants', 'bedrooms', 'hhtype', 'frequency']
   xtab = xtab[cols]
 
   shape = [4, 6, 4, 4, 5]
