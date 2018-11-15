@@ -7,7 +7,13 @@ if [ ! -f ~/apikey.sh ]; then
 fi
 . ~/apikey.sh
 
-source activate default
+#source activate default
+# appropriate conda env should be activated manually
+#source activate default
+if [ "$CONDA_DEFAULT_ENV" == "" ]; then
+  echo Error, no conda env activated
+  exit 1
+fi
 
 # batch submission
 
