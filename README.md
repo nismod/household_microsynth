@@ -12,25 +12,19 @@ This also introduces and tests (successfully) a newly-developed extension to the
 
 ## Installation
 
-### Dependencies
+Requires python3.5 or higher, with numpy and pandas.
 
-- `python3`
+### Dependencies
 
 The following are specified in `requirements.txt` and should be automatically installed, manual steps are shown below just in case. 
 
-- [UKCensusAPI](https://github.com/virgesmith/UKCensusAPI)
+```bash
+$ python3 -m pip install ukcensusapi humanleague
 ```
-pip3 install git+git://github.com/virgesmith/UKCensusAPI.git
-```
-- [humanleague](https://github.com/virgesmith/humanleague)
-```
-pip3 install git+git://github.com/virgesmith/humanleague.git
-```
-NB Ensure you install humanleague version 2 or higher - this package uses features that are not available in earlier versions.
 
 ### Installation and Testing
 ```
-./setup.py install
+./setup.py install --user
 ./setup.py test
 ```
 
