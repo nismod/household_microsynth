@@ -29,8 +29,8 @@ def get_survey_TROBH(waveno=3):
   a[tuple(pivot.index.labels)] = pivot.values.flat
 
   # add small probability of being in an unobserved state but ensure impossible states stay impossible
-  # should probably be 0.5 rather than 0.5/np.sum(a)... 
-  a = (a + 0.5 / np.sum(a)) * get_impossible_TROBH()
+  # 0.5 representing approximately the probability threshhold of the state not being seen in the survey, arbitrarily using 2 decimal orders of magnitude smaller
+  a = (a + 0.005) * get_impossible_TROBH()
   return a
 
 def get_impossible_TROBH():
