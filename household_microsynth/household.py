@@ -1,5 +1,4 @@
 """ Household microsynthesis """
-
 import numpy as np
 import pandas as pd
 
@@ -7,43 +6,7 @@ import ukcensusapi.Nomisweb as Api_ew
 import ukcensusapi.NRScotland as Api_sc
 import humanleague
 import household_microsynth.utils as utils
-
-# wave 3 is census year (2011)
-def _get_constraints(waveno=3):
-  filename = "../../UKsurvey/data/crosstab_wave" + str(waveno) + ".csv"
-  xtab = pd.read_csv(filename)
-  xtab.rename({"size": "occupants", "count": "frequency"}, axis=1, inplace=True)
-  # reorder cols
-  cols = ['tenure', 'rooms', 'occupants', 'bedrooms', 'hhtype', 'frequency']
-  xtab = xtab[cols]
-
-  shape = [4, 6, 4, 4, 5]
-
-  pivot = xtab.pivot_table(index=cols[:-1], values="frequency")
-  # order must be same as column order above
-  a = np.zeros(shape, dtype=float)
-  a[tuple(pivot.index.labels)] = pivot.values.flat
-
-  # add small probability of being in an unobserved state but ensure impossible states stay impossible
-  a = a + 0.5 / np.sum(a) * _get_impossible()
-  return a
-
-def _get_impossible():
-  """ zeros out impossible (beds>rooms, single household with >1 occupants) states, all others are equally probable """
-  constraints = np.ones([4, 6, 4, 4, 5])
-  # forbid bedrooms>rooms
-  for r in range(0, 6): # use rooms/beds map sizes
-    for b in range(r+1, 4):
-      constraints[:, r, :, b, :] = 0
-  # constrain single person household to occupants=1
-  constraints[:, :, 0, :, 1] = 0
-  constraints[:, :, 0, :, 2] = 0
-  constraints[:, :, 0, :, 3] = 0
-  constraints[:, :, 0, :, 4] = 0
-  constraints[:, :, 1, :, 0] = 0
-  constraints[:, :, 2, :, 0] = 0
-  constraints[:, :, 3, :, 0] = 0
-  return constraints
+import household_microsynth.seed as seed
 
 class Household:
   """ Household microsynthesis """
@@ -86,8 +49,8 @@ class Household:
     area_map = self.lc4404.GEOGRAPHY_CODE.unique()
 
     # construct seed disallowing states where B>R]
-    #                           T  R  O  B  X  (X=household type)
-    constraints = _get_constraints()
+    # T  R  O  B  H  (H=household type)
+    constraints = seed.get_survey_TROBH()
     for area in area_map:
       print('.', end='', flush=True)
 

@@ -4,6 +4,7 @@
 run script for Household microsynthesis
 """
 
+import sys
 import time
 import argparse
 import traceback
@@ -96,7 +97,7 @@ def do_hh(region, resolution):
     msynth.run()
   except Exception as error:
     print(traceback.format_exc())
-    return
+    raise error
 
   print("Done. Exec time(s): ", time.time() - start_time)
 
@@ -106,10 +107,12 @@ def do_hh(region, resolution):
     print("ok")
   else:
     print("failed")
+    raise RuntimeError("Consistency check failed")
   output = OUTPUT_DIR + "/hh_" + region + "_" + resolution + "_2011.csv"
   print("Writing synthetic population to", output)
   msynth.dwellings.to_csv(output, index_label="HID")
   print("DONE")
+  return True
 
 def do_hrp(region, resolution):
   """ Do household ref persons """
@@ -125,7 +128,7 @@ def do_hrp(region, resolution):
     msynth = hrp_msynth.ReferencePerson(region, resolution, CACHE_DIR)
   except Exception as error:
     print(error)
-    return
+    raise error
 
   # Do some basic checks on totals
   # TODO this should probably be in ref_person.py (and use raise not assert)
@@ -146,7 +149,7 @@ def do_hrp(region, resolution):
     msynth.run()
   except Exception as error:
     print(error)
-    return
+    raise error
 
   print("Done. Exec time(s): ", time.time() - start_time)
 

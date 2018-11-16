@@ -2,7 +2,9 @@
 *egg-info/
 build/
 dist/
-cache/
+# symlinks dont work with trailing /
+cache 
+cache/ 
 .eggs/
 data/
 .Rproj.user
