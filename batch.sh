@@ -49,7 +49,7 @@ resolution="OA11"
 mkdir -p data
 
 # max run time (NB Birmingham takes longest at ~6h)
-qsub_params="-l h_rt=8:0:0"
+qsub_params="-l h_rt=16:0:0"
 
 for region in $regions; do
   outfile="data/hh_"$region"_"$resolution"_2011.csv"
@@ -57,7 +57,7 @@ for region in $regions; do
     export REGION=$region
     echo Submitting job for $REGION
     qsub -o logs -e logs $qsub_params run.sh
-    sleep 5 
+    sleep 1 
   else
     echo $region done, not resubmitting
   fi
