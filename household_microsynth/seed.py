@@ -14,23 +14,26 @@ import pandas as pd
 # H: household composition
 # wave 3 is census year (2011)
 def get_survey_TROBH(waveno=3):
-  filename = "../../UKsurvey/data/crosstab_wave" + str(waveno) + ".csv"
-  xtab = pd.read_csv(filename)
-  xtab.rename({"size": "occupants", "count": "frequency"}, axis=1, inplace=True)
-  # reorder cols
-  cols = ['tenure', 'rooms', 'occupants', 'bedrooms', 'hhtype', 'frequency']
-  xtab = xtab[cols]
+  # ensure array
+  if isinstance(waveno, int):
+    waveno=[waveno]
+  
+  cols = ['tenure', 'rooms', 'occupants', 'bedrooms', 'hhtype']
+  shape = [4,        6,       4,           4,          5]
+  seed = np.zeros(shape, dtype=float)
+  for w in waveno:
+    filename = "../../UKsurvey/data/crosstab_wave" + str(w) + ".csv"
+    xtab = pd.read_csv(filename)
 
-  shape = [4, 6, 4, 4, 5]
-
-  pivot = xtab.pivot_table(index=cols[:-1], values="frequency")
-  # order must be same as column order above
-  a = np.zeros(shape, dtype=float)
-  a[tuple(pivot.index.labels)] = pivot.values.flat
+    pivot = xtab.pivot_table(index=cols, values="frequency")
+    # order must be same as column order above
+    a = np.zeros(shape, dtype=float)
+    a[tuple(pivot.index.labels)] = pivot.values.flat
+    seed = seed + a
 
   # add small probability of being in an unobserved state but ensure impossible states stay impossible
   # 0.5 representing approximately the probability threshhold of the state not being seen in the survey
-  a = (a + 0.5) * get_impossible_TROBH()
+  seed = (seed + 0.5) * get_impossible_TROBH()
   return a
 
 def get_impossible_TROBH():
@@ -49,3 +52,4 @@ def get_impossible_TROBH():
   constraints[:, :, 2, :, 0] = 0
   constraints[:, :, 3, :, 0] = 0
   return constraints
+

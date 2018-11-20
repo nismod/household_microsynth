@@ -60,6 +60,31 @@ def unlistify(table, cols, sizes, vals):
     a[tuple(pivot.index.labels)] = pivot.values.flat
   return a
 
+# this is a copy-paste from microsimulation
+def check_and_invert(columns, excluded):
+  """
+  Returns the subset of column names that is not in excluded
+  """
+  if isinstance(excluded, str):
+    excluded = [excluded]
+
+  included = columns.tolist()
+  for exclude in excluded:
+    if exclude in included:
+      included.remove(exclude)
+  return included
+
+# this is a copy-paste from microsimulation
+def cap_value(table, colname, maxval, sumcolname):
+  """
+  Aggregates values in column colname 
+  """
+  table_under = table[table[colname] < maxval].copy()
+  table_over = table[table[colname] >= maxval].copy().groupby(check_and_invert(table.columns.values, [colname, sumcolname]))[sumcolname].sum().reset_index()
+  table_over[colname] = maxval
+
+  return table_under.append(table_over)
+
 def people_per_bedroom(people, bedrooms):
   ppbed = people / bedrooms
   if ppbed <= 0.5:

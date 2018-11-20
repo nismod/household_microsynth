@@ -50,7 +50,8 @@ class Household:
 
     # construct seed disallowing states where B>R]
     # T  R  O  B  H  (H=household type)
-    constraints = seed.get_survey_TROBH()
+    # use 7 waves (2009-2015 incl)
+    constraints = seed.get_survey_TROBH() #[1,2,3,4,5,6,7]
     for area in area_map:
       print('.', end='', flush=True)
 
@@ -277,29 +278,54 @@ class Household:
       raise ValueError("invalid region code " + self.region)
 
   def __get_census_data_sc(self):
-    #print(self.api_sc.get_metadata("LC4402SC", self.resolution))
     #print(self.api_sc.get_metadata("LC4404SC", self.resolution))
-    self.lc4402 = self.api_sc.get_data("LC4402SC", self.resolution, self.region)
-    self.lc4404 = self.api_sc.get_data("LC4404SC", self.resolution, self.region)
+    self.lc4402 = self.api_sc.get_data("LC4402SC", self.region, self.resolution, 
+      category_filters={"LC4402SC_0_CODE": [2,3,5,6], "LC4402SC_1_CODE": [2,3,4,5], "LC4402SC_2_CODE": [1,2]})
+    self.lc4402.rename({"LC4402SC_1_CODE": "C_TYPACCOM", "LC4402SC_2_CODE": "C_CENHEATHUK11", "LC4402SC_0_CODE": "C_TENHUK11" }, axis=1, inplace=True)
+    #print(self.lc4402.head())
+    #print(self.lc4402.OBS_VALUE.sum())
 
-    #print(self.api_sc.get_metadata("LC4405SC", self.resolution)) not available
-    #print(self.api_sc.get_metadata("LC4408SC", self.resolution)) not available
-    #print(self.api_sc.get_metadata("LC1105SC", self.resolution)) not available
+    # LC4404SC room categories are: 1, 2-3, 4-5, 6+ so not very useful, using univariate tables instead
+    print(self.api_sc.get_metadata("QS407SC", self.resolution))
+    self.qs407 = self.api_sc.get_data("QS407SC", self.region, self.resolution, category_filters={"QS407SC_0_CODE": range(1,10)})
+    self.qs407.rename({"QS407SC_0_CODE": "C_ROOMS"}, axis=1, inplace=True)
+    self.qs407 = utils.cap_value(self.qs407, "C_ROOMS", 6, "OBS_VALUE")
+    # print(self.qs407.head())
+    # print(self.qs407.OBS_VALUE.sum())
 
-    # print(self.api_sc.get_metadata("KS401SC", self.resolution))
-    # print(self.api_sc.get_metadata("LC4202SC", self.resolution))
-    # print(self.api_sc.get_metadata("LC4605SC", self.resolution))
-    # print(self.api_sc.get_metadata("QS420SC", self.resolution))
-    # print(self.api_sc.get_metadata("QS421SC", self.resolution))
-    self.ks401 = self.api_sc.get_data("KS401SC", self.resolution, self.region)
-    self.lc4202 = self.api_sc.get_data("LC4202SC", self.resolution, self.region)
-    self.lc4605 = self.api_sc.get_data("LC4605SC", self.resolution, self.region)
+    print(self.api_sc.get_metadata("QS406SC", self.resolution))
+    self.qs406 = self.api_sc.get_data("QS406SC", self.region, self.resolution, category_filters={"QS406SC_0_CODE": range(1,9)})
+    self.qs406.rename({"QS406SC_0_CODE": "C_SIZHUK11"}, axis=1, inplace=True)
+    self.qs406 = utils.cap_value(self.qs406, "C_SIZHUK11", 4, "OBS_VALUE")
+    # print(self.qs406.head())
+    # print(self.qs406.OBS_VALUE.sum())
+
+    self.lc4408 = None
+
+
+    #print(self.api_sc.get_metadata("KS401SC", self.resolution))
+# {'table': 'KS401SC', 'description': '', 'geography': 'OA11', 'fields': {'KS401SC_0_CODE': ['All dwellings', 'All dwellings: Unshared', 'All dwellings: Shared: Two household spaces', 'All dwellings: Shared: Three or more household spaces', 'All household spaces', 'All household spaces: Occupied', 'All household spaces: Unoccupied: Second residence/holiday accommodation', 'All household spaces: Unoccupied: Vacant', 'All household spaces: Whole house or bungalow: Detached', 'All household spaces: Whole house or bungalow: Semi-detached', 'All household spaces: Whole house or bungalow: Terraced (including end-terrace)', 'All household spaces: Flat maisonette or apartment: Purpose-built block of flats or tenement', 'All household spaces: Flat maisonette or apartment: Part of a converted or shared house (including bed-sits)', 'All household spaces: Flat maisonette or apartment: In a commercial building', 'All household spaces: Caravan or other mobile or temporary structure']}}
+
+    #print(self.api_sc.get_metadata("LC4202SC", self.resolution))
+#{'table': 'LC4202SC', 'description': '', 'geography': 'OA11', 'fields': {'LC4202SC_1_CODE': ['All households:', 'Owned:', 'Social rented:', 'Private rented or living rent free:'], 'LC4202SC_2_CODE': ['Total', 'Number of cars or vans in household: No cars or vans', 'Number of cars or vans in household: One car or van', 'Number of cars or vans in household:Two or more cars or vans'], 'LC4202SC_0_CODE': ['All households', 'White', 'Mixed or multiple ethnic groups', 'Asian Asian Scottish or Asian British', 'African', 'Caribbean or Black', 'Other ethnic groups']}}
+
+    #print(self.api_sc.get_metadata("LC4605SC", self.resolution))
+#{'table': 'LC4605SC', 'description': '', 'geography': 'OA11', 'fields': {'LC4605SC_1_CODE': ['All HRPs aged 16 to 74', 'Owned: Total', 'Owned: Owned outright', 'Owned: Owned witha mortgage or loan or shared ownership', 'Rented or living rent free: Total', 'Rented or living rent free: Social rented', 'Rented or living rent free: Private rented or living rent free'], 'LC4605SC_0_CODE': ['All HRPs aged 16 to 74', '1. Higher managerial administrative and professional occupations', '2. Lower managerial administrative and professional occupations', '3. Intermediate occupations', '4. Small employers and own account workers', '5. Lower supervisory and technical occupations', '6. Semi-routine occupations', '7. Routine occupations', '8. Never worked and long-term unemployed', 'L15 Full-time students']}}
+
+    #print(self.api_sc.get_metadata("QS420SC", self.resolution))
+#{'table': 'QS420SC', 'description': '', 'geography': 'OA11', 'fields': {'QS420SC_0_CODE': ['All communal establishments', 'Medical and care establishments', 'Medical and care establishments: NHS', 'Medical and care establishments: NHS: General hospital', 'Medical and care establishments: NHS: Mental health hospital/unit (including secure units)', 'Medicaland care establishments: NHS: Other hospital', 'Medical and care establishments: Local authority', "Medical and care establishments: Local authority: Children's home (including secure units)", 'Medical and care establishments: Local authority: Care home with nursing', 'Medical and care establishments: Local authority: Care home without nursing', 'Medical and care establishments: Local authority: Other home', 'Medical and care establishments: Registered Social Landlord/Housing Association', 'Medical and care establishments: Registered Social Landlord/Housing Association: Home or hostel', 'Medical and care establishments: Registered Social Landlord/Housing Association: Sheltered housing only', 'Medical and care establishments: Other', 'Medical and care establishments: Other: Care home with nursing', 'Medical and care establishments: Other: Care home without nursing', "Medical and care establishments: Other: Children's home (including secure units)", 'Medical and care establishments: Other: Mental health hospital/unit (including secure units)', 'Medical and care establishments: Other: Other hospital', 'Medical and care establishments: Other: Other medical and care establishment', 'Other establishments', 'Other establishments: Defence establishments', 'Other establishments: Prison service establishment', 'Other establishments: Approved premises (probation/bail hostel) (1)', 'Other establishments: Detention centres and other detention establishments', 'Other establishments: Education establishments', 'Other establishments: Hotel, guest house, B&B, youth hostel', 'Other establishments: Hostel for the homeless or temporary shelter', 'Other establishments: Holiday accommodation (for example holiday parks)', 'Other establishments: Other travel or temporary accommodation', 'Other establishments: Religious establishment', 'Other establishments: Staff/worker accommodation only', 'Other establishments: Other']}}
+    #print(self.api_sc.get_metadata("QS421SC", self.resolution))
+#{'table': 'QS421SC', 'description': '', 'geography': 'OA11', 'fields': {'QS421SC_0_CODE': ['All communal establishments', 'Medical and care establishments', 'Medical and care establishments: NHS', 'Medical and care establishments: NHS: General hospital', 'Medical and care establishments: NHS: Mental health hospital/unit (including secure units)', 'Medicaland care establishments: NHS: Other hospital', 'Medical and care establishments: Local authority', "Medical and care establishments: Local authority: Children's home (including secure units)", 'Medical and care establishments: Local authority: Care home with nursing', 'Medical and care establishments: Local authority: Care home without nursing', 'Medical and care establishments: Local authority: Other home', 'Medical and care establishments: Registered Social Landlord/Housing Association', 'Medical and care establishments: Registered Social Landlord/Housing Association: Home or hostel', 'Medical and care establishments: Registered Social Landlord/Housing Association: Sheltered housing only', 'Medical and care establishments: Other', 'Medical and care establishments: Other: Care home with nursing', 'Medical and care establishments: Other: Care home without nursing', "Medical and care establishments: Other: Children's home (including secure units)", 'Medical and care establishments: Other: Mental health hospital/unit (including secure units)', 'Medical and care establishments: Other: Other hospital', 'Medical and care establishments: Other: Other medical and care establishment', 'Other establishments', 'Other establishments: Defence establishments', 'Other establishments: Prison service establishment', 'Other establishments: Approved premises (probation/bail hostel) (1)', 'Other establishments: Detention centres and other detention establishments', 'Other establishments: Education establishments', 'Other establishments: Hotel, guest house, B&B, youth hostel', 'Other establishments: Hostel for the homeless or temporary shelter', 'Other establishments: Holiday accommodation (for example holiday parks)', 'Other establishments: Other travel or temporary accommodation', 'Other establishments: Religious establishment', 'Other establishments: Staff/worker accommodation only', 'Other establishments: Other (2)']}}
+
+    self.ks401 = self.api_sc.get_data("KS401SC", self.region, self.resolution)
+    self.lc4202 = self.api_sc.get_data("LC4202SC", self.region, self.resolution)
+    self.lc4605 = self.api_sc.get_data("LC4605SC", self.region, self.resolution)
 
 
     # merge the two communal tables (so we have establishment and people counts)
-    self.communal = self.api_sc.get_data("QS420SC", self.resolution, self.region)
+    self.communal = self.api_sc.get_data("QS420SC", self.region, self.resolution)
     print(self.communal.head())
-    qs421 = self.api_sc.get_data("QS421SC", self.resolution, self.region)
+    qs421 = self.api_sc.get_data("QS421SC", self.region, self.resolution)
     self.communal["CommunalSize"] = qs421.OBS_VALUE
 
   def __get_census_data_ew(self):
