@@ -60,6 +60,17 @@ def unlistify(table, cols, sizes, vals):
     a[tuple(pivot.index.labels)] = pivot.values.flat
   return a
 
+# this is pasted from microsimulation
+def listify(array, valuename, colnames):
+  """
+  converts a multidimensional numpy array into a pandas dataframe with colnames[0] referring to dimension 0, etc
+  and valuecolumn containing the array values
+  """
+  multiindex = pd.MultiIndex.from_product([range(i) for i in array.shape])
+  colmapping = {"level_"+str(i): colnames[i] for i in range(len(colnames))}
+
+  return pd.DataFrame({valuename: pd.Series(index=multiindex, data=array.flatten())}).reset_index().rename(colmapping, axis=1)
+
 # this is a copy-paste from microsimulation
 def check_and_invert(columns, excluded):
   """
