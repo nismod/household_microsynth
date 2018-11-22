@@ -102,7 +102,7 @@ def do_hh(region, resolution):
   print("Done. Exec time(s): ", time.time() - start_time)
 
   print("Checking consistency")
-  success = Utils.check_hh(msynth, total_occ_dwellings, total_households, total_communal, occ_pop_lbound, communal_pop)
+  success = Utils.check_hh(msynth, total_occ_dwellings, total_households, total_communal, occ_pop_lbound, communal_pop, msynth.scotland)
   if success:
     print("ok")
   else:

@@ -24,13 +24,19 @@ class Household:
     # convert input string to enum
     self.resolution = resolution
 
+    # Temporary workaround for unavailable Scottish data
+    self.scotland = False
+    if self.region[0] == "S":
+      self.scotland = True
+      print("Running in 'scotland mode'")
+
     # (down)load the census tables
     self.__get_census_data()
 
     # initialise table and index
-    categories = ["Area", "LC4402_C_TYPACCOM", "QS420EW_CELL", "LC4402_C_TENHUK11", "LC4408_C_AHTHUK11", "CommunalSize",
-                  "LC4404EW_C_SIZHUK11", "LC4404EW_C_ROOMS", "LC4405EW_C_BEDROOMS", "LC4408EW_C_PPBROOMHEW11",
-                  "LC4402_C_CENHEATHUK11", "LC4605EW_C_NSSEC", "LC4202EW_C_ETHHUK11", "LC4202EW_C_CARSNO"]
+    categories = ["Area", "LC4402_C_TYPACCOM", "QS420_CELL", "LC4402_C_TENHUK11", "LC4408_C_AHTHUK11", "CommunalSize",
+                  "LC4404_C_SIZHUK11", "LC4404_C_ROOMS", "LC4405EW_C_BEDROOMS", "LC4408EW_C_PPBROOMHEW11",
+                  "LC4402_C_CENHEATHUK11", "LC4605_C_NSSEC", "LC4202_C_ETHHUK11", "LC4202_C_CARSNO"]
     self.total_dwellings = sum(self.ks401.OBS_VALUE) + sum(self.communal.OBS_VALUE)
 #    self.dwellings = pd.DataFrame(index=range(0, self.total_dwellings), columns=categories)
     self.dwellings = pd.DataFrame(columns=categories)
@@ -50,7 +56,12 @@ class Household:
     # construct seed disallowing states where B>R]
     # T  R  O  B  H  (H=household type)
     # use 7 waves (2009-2015 incl)
-    constraints = seed.get_survey_TROBH() #[1,2,3,4,5,6,7]
+    constraints = seed.get_impossible_TROBH() #[1,2,3,4,5,6,7]
+
+    # bedrooms removed for Scotland
+    if self.scotland:
+      constraints = np.expand_dims(np.sum(constraints, axis=3), 3)
+
     for area in area_map:
       print('.', end='', flush=True)
 
@@ -70,19 +81,19 @@ class Household:
 
   def __add_households(self, area, constraints):
 
-    # TODO remove - duplicate(?)
-    # TODO make members?                        # Dim (overall dim)
-    tenure_map = [2, 3, 5, 6]                   # 0
-    rooms_map = [1, 2, 3, 4, 5, 6]              # 1
-    occupants_map = [1, 2, 3, 4]                # 2
-    bedrooms_map = [1, 2, 3, 4]                 # 3
-    hhtype_map = [1, 2, 3, 4, 5]                # 4
+    # TODO use actual values from tables
+    # TODO make members?                            # Dim (overall dim)
+    tenure_map = self.lc4402.C_TENHUK11.unique()    # 0
+    rooms_map = self.lc4404.C_ROOMS.unique()        # 1
+    occupants_map = self.lc4404.C_SIZHUK11.unique() # 2
+    bedrooms_map = self.lc4405.C_BEDROOMS.unique()  # 3 [1,2,3,4] or [-1]
+    hhtype_map =  self.lc4408.C_AHTHUK11.unique()   # 4
     #
-    ch_map = [1, 2]                             # 1 (5)
-    buildtype_map = [2, 3, 4, 5]                # 2 (6)
-    eth_map = [2, 3, 4, 5, 6, 7, 8]             # 3 (7)
-    cars_map = [1, 2, 3]                        # 4 (8)
-    econ_map = [1, 2, 3, 4, 5, 6, 7, 8, 9]      # 5 (9)
+    ch_map = self.lc4402.C_CENHEATHUK11.unique()    # 1 (5)
+    buildtype_map = self.lc4402.C_TYPACCOM.unique() # 2 (6)
+    eth_map = self.lc4202.C_ETHHUK11.unique()       # 3 (7)
+    cars_map = self.lc4202.C_CARSNO.unique()        # 4 (8)
+    econ_map = self.lc4605.C_NSSEC.unique()         # 5 (9)
 
     tenure_rooms_occ = self.lc4404.loc[self.lc4404.GEOGRAPHY_CODE == area].copy()
     # unmap indices
@@ -96,10 +107,11 @@ class Household:
                             [len(tenure_map), len(rooms_map), len(occupants_map)],
                             "OBS_VALUE")
 
+    # no bedroom info in Scottish data
     tenure_beds_occ = self.lc4405.loc[self.lc4405.GEOGRAPHY_CODE == area].copy()
 
     # unmap indices
-    utils.unmap(tenure_beds_occ.C_BEDROOMS, rooms_map)
+    utils.unmap(tenure_beds_occ.C_BEDROOMS, bedrooms_map)
     utils.unmap(tenure_beds_occ.C_TENHUK11, tenure_map)
     utils.unmap(tenure_beds_occ.C_SIZHUK11, occupants_map)
 
@@ -107,6 +119,7 @@ class Household:
                             ["C_TENHUK11", "C_BEDROOMS", "C_SIZHUK11"],
                             [len(tenure_map), len(bedrooms_map), len(occupants_map)],
                             "OBS_VALUE")
+#    print(m4405.shape)
 
     tenure_accom = self.lc4408.loc[self.lc4408.GEOGRAPHY_CODE == area].copy()
 
@@ -117,10 +130,17 @@ class Household:
                             ["C_TENHUK11", "C_AHTHUK11"],
                             [len(tenure_map), len(hhtype_map)],
                             "OBS_VALUE")
+    #print(np.sum(m4404), np.sum(m4405), np.sum(m4408))
 
     # TODO relax IPF tolerance and maxiters when used within QISI?
-    p0 = humanleague.qisi(constraints, [np.array([0, 1, 2]), np.array([0, 3, 2]), np.array([0, 4])], [m4404, m4405, m4408])
+    if self.scotland:
+      m4408 = np.sum(m4408, axis=0)
+      p0 = humanleague.qisi(constraints, [np.array([0, 1, 2]), np.array([0, 3, 2]), np.array([4])], [m4404, m4405, m4408])
+    else:
+      p0 = humanleague.qisi(constraints, [np.array([0, 1, 2]), np.array([0, 3, 2]), np.array([0, 4])], [m4404, m4405, m4408])
+    
     utils.check_humanleague_result(p0, [m4404, m4405, m4408])
+    #print("p0 ok")
 
     tenure_ch_accom = self.lc4402.loc[self.lc4402.GEOGRAPHY_CODE == area].copy()
     utils.unmap(tenure_ch_accom.C_CENHEATHUK11, ch_map)
@@ -129,7 +149,7 @@ class Household:
 
     m4402 = utils.unlistify(tenure_ch_accom,
                             ["C_TENHUK11", "C_CENHEATHUK11", "C_TYPACCOM"],
-                            [len(tenure_map), len(bedrooms_map), len(occupants_map)],
+                            [len(tenure_map), len(ch_map), len(buildtype_map)],
                             "OBS_VALUE")
 
     tenure_eth_car = self.lc4202.loc[self.lc4202.GEOGRAPHY_CODE == area].copy()
@@ -158,40 +178,55 @@ class Household:
     m4202_sum = np.sum(m4202)
 
     if m4605_sum != m4202_sum:
-      print("LC4605:"+str(m4605_sum)+"->"+str(m4202_sum), end="")
+      print("LC4402: %d LC4605: %d -> %d " % (np.sum(m4402), m4605_sum, m4202_sum), end="")
       tenure_4202 = np.sum(m4202, axis=(1, 2))
       nssec_4605_adj = humanleague.prob2IntFreq(np.sum(m4605, axis=0) / m4605_sum, m4202_sum)["freq"]
-      m4605_adj = humanleague.qisi(m4605.astype(float), [np.array([0]), np.array([1])], [tenure_4202, nssec_4605_adj])
+#      m4605_adj = humanleague.qisi(m4605.astype(float), [np.array([0]), np.array([1])], [tenure_4202, nssec_4605_adj])
       # Convergence problems can occur when e.g. one of the tenure rows is zero yet the marginal total is nonzero,
       # Can get round this by adding a small number to the seed
       # effectively allowing zero states to be occupied with a finite probability
-      if not m4605_adj["conv"]:
-        m4605_adj = humanleague.qisi(m4605.astype(float) + 1.0/m4202_sum, [np.array([0]), np.array([1])], [tenure_4202, nssec_4605_adj])
+#      if not m4605_adj["conv"]: 
+      m4605_adj = humanleague.qisi(m4605.astype(float) + 1.0/m4202_sum, [np.array([0]), np.array([1])], [tenure_4202, nssec_4605_adj])
 
       utils.check_humanleague_result(m4605_adj, [tenure_4202, nssec_4605_adj])
       m4605 = m4605_adj["result"]
+      #print("econ adj ok")
+
+
+    # print(np.sum(p0["result"], axis=(1,2,3,4)))
+    # print(np.sum(m4402, axis=(1,2)))
+    # print(np.sum(m4202, axis=(1,2)))
+    # print(np.sum(m4605, axis=1))
 
     # no seed constraint so just use QIS
-    p1 = humanleague.qis([np.array([0, 1, 2, 3, 4]), np.array([0, 5, 6]), np.array([0, 7, 8]), np.array([0, 9])], [p0["result"], m4402, m4202, m4605])
-    #p1 = humanleague.qis([np.array([0, 1, 2, 3]), np.array([0, 4, 5]), np.array([0, 6, 7])], [p0["result"], m4402, m4202])
+    if self.scotland:
+      # tenures not mappable in LC4202
+      m4202 = np.sum(m4202, axis=0)
+      m4605 = np.sum(m4605, axis=0)
+      p1 = humanleague.qis([np.array([0, 1, 2, 3, 4]), np.array([0, 5, 6]), np.array([7, 8]), np.array([9])], [p0["result"], m4402, m4202, m4605])
+      #p1 = humanleague.qis([np.array([0, 1, 2, 3]), np.array([0, 4, 5]), np.array([0, 6, 7])], [p0["result"], m4402, m4202])
+    else:
+      p1 = humanleague.qis([np.array([0, 1, 2, 3, 4]), np.array([0, 5, 6]), np.array([0, 7, 8]), np.array([0, 9])], [p0["result"], m4402, m4202, m4605])
+      #p1 = humanleague.qis([np.array([0, 1, 2, 3]), np.array([0, 4, 5]), np.array([0, 6, 7])], [p0["result"], m4402, m4202])
     utils.check_humanleague_result(p1, [p0["result"], m4402, m4202, m4605])
+    #print("p1 ok")
 
     table = humanleague.flatten(p1["result"])
 
     chunk = pd.DataFrame(columns=self.dwellings.columns.values)
     chunk.Area = np.repeat(area, len(table[0]))
     chunk.LC4402_C_TENHUK11 = utils.remap(table[0], tenure_map)
-    chunk.QS420EW_CELL = np.repeat(self.NOTAPPLICABLE, len(table[0]))
-    chunk.LC4404EW_C_ROOMS = utils.remap(table[1], rooms_map)
-    chunk.LC4404EW_C_SIZHUK11 = utils.remap(table[2], occupants_map)
+    chunk.QS420_CELL = np.repeat(self.NOTAPPLICABLE, len(table[0]))
+    chunk.LC4404_C_ROOMS = utils.remap(table[1], rooms_map)
+    chunk.LC4404_C_SIZHUK11 = utils.remap(table[2], occupants_map)
     chunk.LC4405EW_C_BEDROOMS = utils.remap(table[3], bedrooms_map)
     chunk.LC4408_C_AHTHUK11 = utils.remap(table[4], hhtype_map)
     chunk.LC4402_C_CENHEATHUK11 = utils.remap(table[5], ch_map)
     chunk.LC4402_C_TYPACCOM = utils.remap(table[6], buildtype_map)
     chunk.CommunalSize = np.repeat(self.NOTAPPLICABLE, len(table[0]))
-    chunk.LC4202EW_C_ETHHUK11 = utils.remap(table[7], eth_map)
-    chunk.LC4202EW_C_CARSNO = utils.remap(table[8], cars_map)
-    chunk.LC4605EW_C_NSSEC = utils.remap(table[9], econ_map)
+    chunk.LC4202_C_ETHHUK11 = utils.remap(table[7], eth_map)
+    chunk.LC4202_C_CARSNO = utils.remap(table[8], cars_map)
+    chunk.LC4605_C_NSSEC = utils.remap(table[9], econ_map)
     #print(chunk.head())
     self.dwellings = self.dwellings.append(chunk, ignore_index=True)
 
@@ -208,14 +243,14 @@ class Household:
     chunk = pd.DataFrame(columns=self.dwellings.columns.values)
     chunk.Area = np.repeat(area, num_communal)
     chunk.LC4402_C_TENHUK11 = np.repeat(self.NOTAPPLICABLE, num_communal)
-    chunk.LC4404EW_C_ROOMS = np.repeat(self.UNKNOWN, num_communal)
-    chunk.LC4404EW_C_SIZHUK11 = np.repeat(self.UNKNOWN, num_communal)
+    chunk.LC4404_C_ROOMS = np.repeat(self.UNKNOWN, num_communal)
+    chunk.LC4404_C_SIZHUK11 = np.repeat(self.UNKNOWN, num_communal)
     chunk.LC4405EW_C_BEDROOMS = np.repeat(self.UNKNOWN, num_communal)
     chunk.LC4408_C_AHTHUK11 = np.repeat(self.UNKNOWN, num_communal) # communal not considered separately to multi-person household
     chunk.LC4402_C_CENHEATHUK11 = np.repeat(2, num_communal) # assume all communal are centrally heated
     chunk.LC4402_C_TYPACCOM = np.repeat(self.NOTAPPLICABLE, num_communal)
-    chunk.LC4202EW_C_ETHHUK11 = np.repeat(self.UNKNOWN, num_communal)
-    chunk.LC4202EW_C_CARSNO = np.repeat(1, num_communal) # no cars (blanket assumption)
+    chunk.LC4202_C_ETHHUK11 = np.repeat(self.UNKNOWN, num_communal)
+    chunk.LC4202_C_CARSNO = np.repeat(1, num_communal) # no cars (blanket assumption)
 
     index = 0
     #print(area, len(area_communal))
@@ -228,9 +263,9 @@ class Household:
       else:
         occ_array = humanleague.prob2IntFreq(np.full(establishments, 1.0 / establishments), occupants)["freq"]
       for j in range(0, establishments):
-        chunk.QS420EW_CELL.at[index] = area_communal.at[area_communal.index[i], "CELL"]
+        chunk.QS420_CELL.at[index] = area_communal.at[area_communal.index[i], "CELL"]
         chunk.CommunalSize.at[index] = occ_array[j]
-        chunk.LC4605EW_C_NSSEC.at[index] = utils.communal_economic_status(area_communal.at[area_communal.index[i], "CELL"])
+        chunk.LC4605_C_NSSEC.at[index] = utils.communal_economic_status(area_communal.at[area_communal.index[i], "CELL"])
         index += 1
 
     #print(chunk.head())
@@ -248,19 +283,19 @@ class Household:
     chunk = pd.DataFrame(columns=self.dwellings.columns.values)
     chunk.Area = np.repeat(area, n_unocc)
     chunk.LC4402_C_TENHUK11 = np.repeat(self.UNKNOWN, n_unocc)
-    chunk.LC4404EW_C_SIZHUK11 = np.repeat(0, n_unocc)
+    chunk.LC4404_C_SIZHUK11 = np.repeat(0, n_unocc)
     chunk.LC4408_C_AHTHUK11 = np.repeat(self.UNKNOWN, n_unocc)
     chunk.LC4402_C_TYPACCOM = np.repeat(self.NOTAPPLICABLE, n_unocc)
-    chunk.LC4202EW_C_ETHHUK11 = np.repeat(self.UNKNOWN, n_unocc)
-    chunk.LC4202EW_C_CARSNO = np.repeat(1, n_unocc) # no cars
-    chunk.QS420EW_CELL = np.repeat(self.NOTAPPLICABLE, n_unocc)
+    chunk.LC4202_C_ETHHUK11 = np.repeat(self.UNKNOWN, n_unocc)
+    chunk.LC4202_C_CARSNO = np.repeat(1, n_unocc) # no cars
+    chunk.QS420_CELL = np.repeat(self.NOTAPPLICABLE, n_unocc)
     chunk.CommunalSize = np.repeat(self.NOTAPPLICABLE, n_unocc)
-    chunk.LC4605EW_C_NSSEC = np.repeat(self.UNKNOWN, n_unocc)
+    chunk.LC4605_C_NSSEC = np.repeat(self.UNKNOWN, n_unocc)
 
-    occ = self.dwellings.loc[(self.dwellings.Area == area) & (self.dwellings.QS420EW_CELL == self.NOTAPPLICABLE)]
+    occ = self.dwellings.loc[(self.dwellings.Area == area) & (self.dwellings.QS420_CELL == self.NOTAPPLICABLE)]
 
     s = occ.sample(n_unocc, replace=True).reset_index()
-    chunk.LC4404EW_C_ROOMS = s.LC4404EW_C_ROOMS
+    chunk.LC4404_C_ROOMS = s.LC4404_C_ROOMS
     chunk.LC4405EW_C_BEDROOMS = s.LC4405EW_C_BEDROOMS
     chunk.LC4402_C_CENHEATHUK11 = s.LC4402_C_CENHEATHUK11
 
@@ -285,6 +320,12 @@ class Household:
     # ensure counts are consistent across tables
     checksum = self.lc4402.OBS_VALUE.sum()
 
+    # construct a tenure marginal for synthesis of other tables unavailable in Scottish dataset
+    ngeogs = len(self.lc4402.GEOGRAPHY_CODE.unique())
+    ntenures = len(self.lc4402.C_TENHUK11.unique())
+    tenure_table = self.lc4402.groupby(["GEOGRAPHY_CODE", "C_TENHUK11"]).sum().reset_index().drop(["C_TYPACCOM", "C_CENHEATHUK11"], axis=1)
+    m4402 = utils.unlistify(tenure_table, ["GEOGRAPHY_CODE", "C_TENHUK11"], [ngeogs, ntenures], "OBS_VALUE")
+
     # synthesise LC4404 from QS407 and QS406
     # LC4404SC room categories are: 1, 2-3, 4-5, 6+ so not very useful, using univariate tables instead
     #print(self.api_sc.get_metadata("QS407SC", self.resolution))
@@ -301,26 +342,45 @@ class Household:
     #print(qs406.head())
     assert qs406.OBS_VALUE.sum() == checksum
 
-    ngeogs = len(qs406.GEOGRAPHY_CODE.unique())
     nrooms = len(qs407.C_ROOMS.unique())
     nsizes = len(qs406.C_SIZHUK11.unique())
 
     m407 = utils.unlistify(qs407, ["GEOGRAPHY_CODE", "C_ROOMS"], [ngeogs, nrooms], "OBS_VALUE")
     m406 = utils.unlistify(qs406, ["GEOGRAPHY_CODE", "C_SIZHUK11"], [ngeogs, nsizes], "OBS_VALUE")
 
-    a4404 = humanleague.qis([np.array([0,1]), np.array([0,2])], [m407, m406])
-    utils.check_humanleague_result(a4404, [m407, m406])
-    self.lc4404 = utils.listify(a4404["result"], "OBS_VALUE", ["GEOGRAPHY_CODE", "C_ROOMS", "C_SIZHUK11"])
+    a4404 = humanleague.qis([np.array([0,1]), np.array([0,2]), np.array([0,3])], [m4402, m407, m406])
+    utils.check_humanleague_result(a4404, [m4402, m407, m406])
+    self.lc4404 = utils.listify(a4404["result"], "OBS_VALUE", ["GEOGRAPHY_CODE", "C_TENHUK11", "C_ROOMS", "C_SIZHUK11"])
     self.lc4404.GEOGRAPHY_CODE = utils.remap(self.lc4404.GEOGRAPHY_CODE, qs406.GEOGRAPHY_CODE.unique())
+    self.lc4404.C_TENHUK11 = utils.remap(self.lc4404.C_TENHUK11, tenure_table.C_TENHUK11.unique())
     self.lc4404.C_ROOMS = utils.remap(self.lc4404.C_ROOMS, qs407.C_ROOMS.unique())
     self.lc4404.C_SIZHUK11 = utils.remap(self.lc4404.C_SIZHUK11, qs406.C_SIZHUK11.unique())
 
+    #print(self.lc4404.head())
+
     assert self.lc4404.OBS_VALUE.sum() == checksum
 
-    # no bedroom info is available
-    self.lc4405 = self.lc4404
-    self.lc4405.rename({"C_ROOMS": "C_BEDROOMS"}, axis=1, inplace=True)
+    # no bedroom info is available 
+    # for now randomly sample from survey on rooms
+    # TODO microsynth using tenure/occs also?
+    self.lc4405 = self.lc4404.copy()
+#    self.lc4405.rename({"C_ROOMS": "C_BEDROOMS"}, axis=1, inplace=True)
     self.lc4405["C_BEDROOMS"] = Household.UNKNOWN
+    room_bed_dist = np.sum(seed.get_survey_TROBH(), axis=(0,2,4))
+    #print(room_bed_dist)
+    # c = [1,2,3,4]
+    # for i in range(0,6):
+    #   p = room_bed_dist[i]/np.sum(room_bed_dist[i])
+    #   n = len(self.lc4405[self.lc4405.C_ROOMS == i+1])
+    #   #print(np.random.choice(c, n, p=p))
+    #   self.lc4405.loc[self.lc4405.C_ROOMS == i+1, "C_BEDROOMS"] = np.random.choice(c, n, p=p)
+    #assert len(self.lc4405[self.lc4405.C_BEDROOMS == Household.UNKNOWN]) == 0
+
+    assert len(self.lc4405[self.lc4405.C_ROOMS < self.lc4405.C_BEDROOMS]) == 0
+    self.lc4405.drop("C_ROOMS", axis=1, inplace=True)
+    self.lc4405 = self.lc4405.groupby(["GEOGRAPHY_CODE", "C_TENHUK11", "C_SIZHUK11", "C_BEDROOMS"]).sum().reset_index()
+    #print(self.lc4405)
+    assert self.lc4405.OBS_VALUE.sum() == checksum
 
     # synthesise LC4408
 
@@ -343,19 +403,16 @@ class Household:
     # (5,6) -> 3 (cohabiting couple)
     # (7,8) -> 4 (single parent)
     # (9,10) -> 5 (mixed)
-    qs116[(qs116.C_AHTHUK11 == 2) | (qs116.C_AHTHUK11 == 3) | (qs116.C_AHTHUK11 == 4)].C_AHTHUK11 = 2  
-    qs116[(qs116.C_AHTHUK11 == 5) | (qs116.C_AHTHUK11 == 6)].C_AHTHUK11 = 3 
-    qs116[(qs116.C_AHTHUK11 == 7) | (qs116.C_AHTHUK11 == 8)].C_AHTHUK11 = 4 
-    qs116[(qs116.C_AHTHUK11 == 9) | (qs116.C_AHTHUK11 == 10)].C_AHTHUK11 = 5
+    qs116.loc[(qs116.C_AHTHUK11 == 2) | (qs116.C_AHTHUK11 == 3) | (qs116.C_AHTHUK11 == 4), "C_AHTHUK11"] = 2  
+    qs116.loc[(qs116.C_AHTHUK11 == 5) | (qs116.C_AHTHUK11 == 6), "C_AHTHUK11"] = 3 
+    qs116.loc[(qs116.C_AHTHUK11 == 7) | (qs116.C_AHTHUK11 == 8), "C_AHTHUK11"] = 4 
+    qs116.loc[(qs116.C_AHTHUK11 == 9) | (qs116.C_AHTHUK11 == 10), "C_AHTHUK11"] = 5
     # ...and consolidate
     qs116 = qs116.groupby(["GEOGRAPHY_CODE", "C_AHTHUK11"]).sum().reset_index()
 
     assert qs116.OBS_VALUE.sum() == checksum
 
-    ntenures = len(self.lc4402.C_TENHUK11.unique())
     nhhtypes = len(qs116.C_AHTHUK11.unique())
-    tenure_table = self.lc4402.groupby(["GEOGRAPHY_CODE", "C_TENHUK11"]).sum().reset_index().drop(["C_TYPACCOM", "C_CENHEATHUK11"], axis=1)
-    m4402 = utils.unlistify(tenure_table, ["GEOGRAPHY_CODE", "C_TENHUK11"], [ngeogs, ntenures], "OBS_VALUE")
     m116 = utils.unlistify(qs116, ["GEOGRAPHY_CODE", "C_AHTHUK11"], [ngeogs, nhhtypes], "OBS_VALUE")
 
     a4408 = humanleague.qis([np.array([0,1]), np.array([0,2])], [m4402, m116])
@@ -368,6 +425,14 @@ class Household:
     #print(self.lc4408.head())
     assert self.lc4408.OBS_VALUE.sum() == checksum
 
+    # LC1105
+    #print(self.api_sc.get_metadata("KS101SC", self.resolution))
+    self.lc1105 = self.api_sc.get_data("KS101SC", self.region, self.resolution, category_filters={"KS101SC_0_CODE": [3,4]})
+    self.lc1105.rename({"KS101SC_0_CODE": "C_RESIDENCE_TYPE"}, axis=1, inplace=True)
+    # 3->1, 4->2
+    self.lc1105["C_RESIDENCE_TYPE"] = self.lc1105["C_RESIDENCE_TYPE"] - 2
+    #print(self.lc1105.OBS_VALUE.sum(), checksum)
+    
     # occupied vs unoccupied
     #print(self.api_sc.get_metadata("KS401SC", self.resolution))
     # 5'All household spaces: Occupied', 
@@ -399,10 +464,12 @@ class Household:
     # 'Other ethnic groups']}}
     self.lc4202 = self.api_sc.get_data("LC4202SC", self.region, self.resolution, category_filters={"LC4202SC_1_CODE": [1,2,3], "LC4202SC_2_CODE": [1,2,3], "LC4202SC_0_CODE": [1,2,3,4,5,6]})
     self.lc4202.rename({"LC4202SC_2_CODE": "C_CARSNO", "LC4202SC_1_CODE": "C_TENHUK11", "LC4202SC_0_CODE": "C_ETHHUK11"}, axis=1, inplace=True)
-    # TODO map tenures 1->2/3, 2->5 3->6
+    # TODO how to map tenure 1->2/3?
+    self.lc4202.loc[self.lc4202.C_TENHUK11 == 3, "C_TENHUK11"] = 6
+    self.lc4202.loc[self.lc4202.C_TENHUK11 == 2, "C_TENHUK11"] = 5
+    self.lc4202.loc[self.lc4202.C_TENHUK11 == 1, "C_TENHUK11"] = 3 # OR 2?
+
     assert self.lc4202.OBS_VALUE.sum() == checksum
-
-
 
     #print(self.api_sc.get_metadata("LC4605SC", self.resolution))
     #{'table': 'LC4605SC', 'description': '', 'geography': 'OA11', 'fields': {'LC4605SC_1_CODE': [
