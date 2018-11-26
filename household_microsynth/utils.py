@@ -186,7 +186,8 @@ def check_hh(msynth, total_occ_dwellings, total_households, total_communal, tota
                             & (msynth.dwellings.LC4404_C_SIZHUK11 != 0)].LC4404_C_SIZHUK11.sum() == total_household_poplb
   assert msynth.dwellings[(msynth.dwellings.QS420_CELL == msynth.NOTAPPLICABLE)
                             & (msynth.dwellings.LC4404_C_SIZHUK11 == 0)].LC4404_C_SIZHUK11.sum() == 0
-  assert msynth.dwellings[msynth.dwellings.QS420_CELL != msynth.NOTAPPLICABLE].CommunalSize.sum() == total_communal_pop
+  if not scotland:
+    assert msynth.dwellings[msynth.dwellings.QS420_CELL != msynth.NOTAPPLICABLE].CommunalSize.sum() == total_communal_pop
 
 
   # Build (accomodation) type (occupied only)
