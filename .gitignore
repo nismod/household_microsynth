@@ -11,3 +11,4 @@ data/
 apikey.sh
 run.sh.o*
 run.sh.e*
+cache/

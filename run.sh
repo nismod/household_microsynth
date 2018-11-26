@@ -15,7 +15,7 @@ fi
 #$ -m e
 #$ -M a.p.smith@leeds.ac.uk
 #$ -cwd -V
-#$ -l h_vmem=1G
+#$ -l h_vmem=2G
 #$ -pe smp 1 
 ##$ -l node_type=256thread-112G 
 python3 scripts/run_microsynth.py $REGION OA11
