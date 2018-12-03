@@ -18,15 +18,21 @@ def adjust(table, consistent_table):
         table.OBS_VALUE.at[index[randint(0, r-1)]] += 1
   return table
 
-def check_humanleague_result(result, marginals):
+def check_humanleague_result(result, marginals, seed=None):
   """
   checks the result of the call to humanleague
   """
   # if its a string its an error
   if isinstance(result, str):
+    if not seed is None:
+      print(seed)
+    for m in marginals:
+      print(m)
     raise RuntimeError(result)
 
   if not result["conv"]:
+    if not seed is None:
+      print(seed)
     for m in marginals:
       print(m)
     print(result)  

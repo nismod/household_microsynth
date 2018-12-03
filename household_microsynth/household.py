@@ -56,7 +56,7 @@ class Household:
     # construct seed disallowing states where B>R]
     # T  R  O  B  H  (H=household type)
     # use 7 waves (2009-2015 incl)
-    constraints = seed.get_impossible_TROBH() #[1,2,3,4,5,6,7]
+    constraints = seed.get_survey_TROBH() #[1,2,3,4,5,6,7]
 
     # bedrooms removed for Scotland
     if self.scotland:
@@ -138,8 +138,12 @@ class Household:
       p0 = humanleague.qisi(constraints, [np.array([0, 1, 2]), np.array([0, 3, 2]), np.array([4])], [m4404, m4405, m4408])
     else:
       p0 = humanleague.qisi(constraints, [np.array([0, 1, 2]), np.array([0, 3, 2]), np.array([0, 4])], [m4404, m4405, m4408])
+
+    # drop the survey seed if there are convergence problems
+    if not isinstance(p0, dict):
+      p0 = humanleague.qisi(seed.get_impossible_TROBH(), [np.array([0, 1, 2]), np.array([0, 3, 2]), np.array([0, 4])], [m4404, m4405, m4408])
     
-    utils.check_humanleague_result(p0, [m4404, m4405, m4408])
+    utils.check_humanleague_result(p0, [m4404, m4405, m4408], constraints)
     #print("p0 ok")
 
     tenure_ch_accom = self.lc4402.loc[self.lc4402.GEOGRAPHY_CODE == area].copy()

@@ -34,7 +34,7 @@ def get_survey_TROBH(waveno=3):
   # add small probability of being in an unobserved state but ensure impossible states stay impossible
   # 0.5 representing approximately the probability threshhold of the state not being seen in the survey
   seed = (seed + 0.5) * get_impossible_TROBH()
-  return a
+  return seed
 
 def get_impossible_TROBH():
   """ zeros out impossible (beds>rooms, single household with >1 occupants) states, all others are equally probable """
