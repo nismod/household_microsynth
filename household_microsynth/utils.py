@@ -24,17 +24,19 @@ def check_humanleague_result(result, marginals, seed=None):
   """
   # if its a string its an error
   if isinstance(result, str):
+    print("humanleague error:", )
     if not seed is None:
-      print(seed)
+      print(np.array2string(seed, separator=', '))
     for m in marginals:
-      print(m)
+      print(np.array2string(m, separator=', '))
     raise RuntimeError(result)
 
   if not result["conv"]:
+    print("humanleague convergence failure") 
     if not seed is None:
-      print(seed)
+      print(np.array2string(seed, separator=', '))
     for m in marginals:
-      print(m)
+      print(np.array2string(m, separator=', '))
     print(result)  
     raise RuntimeError("humanleague convergence failure") 
 
