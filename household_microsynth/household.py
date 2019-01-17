@@ -133,16 +133,17 @@ class Household:
     #print(np.sum(m4404), np.sum(m4405), np.sum(m4408))
 
     # TODO relax IPF tolerance and maxiters when used within QISI?
+    m4408dim = np.array([0, 4])
+    # collapse m4408 dim for scotland
     if self.scotland:
       m4408 = np.sum(m4408, axis=0)
-      p0 = humanleague.qisi(constraints, [np.array([0, 1, 2]), np.array([0, 3, 2]), np.array([4])], [m4404, m4405, m4408])
-    else:
-      p0 = humanleague.qisi(constraints, [np.array([0, 1, 2]), np.array([0, 3, 2]), np.array([0, 4])], [m4404, m4405, m4408])
+      m4408dim = np.array([4])
+    p0 = humanleague.qisi(constraints, [np.array([0, 1, 2]), np.array([0, 3, 2]), m4408dim], [m4404, m4405, m4408])
 
     # drop the survey seed if there are convergence problems
-    # TODO check_humanleague_result needs work
+    # TODO check_humanleague_result needs complete refactoring
     if not isinstance(p0, dict) or not p0["conv"]:
-      p0 = humanleague.qisi(seed.get_impossible_TROBH(), [np.array([0, 1, 2]), np.array([0, 3, 2]), np.array([0, 4])], [m4404, m4405, m4408])
+      p0 = humanleague.qisi(seed.get_impossible_TROBH(), [np.array([0, 1, 2]), np.array([0, 3, 2]), m4408dim], [m4404, m4405, m4408])
       utils.check_humanleague_result(p0, [m4404, m4405, m4408], seed.get_impossible_TROBH())
     else:
       utils.check_humanleague_result(p0, [m4404, m4405, m4408], constraints)
