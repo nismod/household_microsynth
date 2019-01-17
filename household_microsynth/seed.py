@@ -22,7 +22,7 @@ def get_survey_TROBH(waveno=3):
   shape = [4,        6,       4,           4,          5]
   seed = np.zeros(shape, dtype=float)
   for w in waveno:
-    filename = "../../UKsurvey/data/crosstab_wave" + str(w) + ".csv"
+    filename = "./persistent_data/crosstab_wave" + str(w) + ".csv"
     xtab = pd.read_csv(filename)
 
     pivot = xtab.pivot_table(index=cols, values="frequency")
