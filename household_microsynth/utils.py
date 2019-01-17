@@ -18,6 +18,7 @@ def adjust(table, consistent_table):
         table.OBS_VALUE.at[index[randint(0, r-1)]] += 1
   return table
 
+# TODO this shouldnt throw it should report back to caller
 def check_humanleague_result(result, marginals, seed=None):
   """
   checks the result of the call to humanleague

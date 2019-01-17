@@ -140,10 +140,13 @@ class Household:
       p0 = humanleague.qisi(constraints, [np.array([0, 1, 2]), np.array([0, 3, 2]), np.array([0, 4])], [m4404, m4405, m4408])
 
     # drop the survey seed if there are convergence problems
-    if not isinstance(p0, dict):
+    # TODO check_humanleague_result needs work
+    if not isinstance(p0, dict) or not p0["conv"]:
       p0 = humanleague.qisi(seed.get_impossible_TROBH(), [np.array([0, 1, 2]), np.array([0, 3, 2]), np.array([0, 4])], [m4404, m4405, m4408])
+      utils.check_humanleague_result(p0, [m4404, m4405, m4408], seed.get_impossible_TROBH())
+    else:
+      utils.check_humanleague_result(p0, [m4404, m4405, m4408], constraints)
     
-    utils.check_humanleague_result(p0, [m4404, m4405, m4408], constraints)
     #print("p0 ok")
 
     tenure_ch_accom = self.lc4402.loc[self.lc4402.GEOGRAPHY_CODE == area].copy()
