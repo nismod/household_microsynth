@@ -143,6 +143,7 @@ class Household:
     # drop the survey seed if there are convergence problems
     # TODO check_humanleague_result needs complete refactoring
     if not isinstance(p0, dict) or not p0["conv"]:
+      print("Dropping TROBH constraint due to convergence failure")
       p0 = humanleague.qisi(seed.get_impossible_TROBH(), [np.array([0, 1, 2]), np.array([0, 3, 2]), m4408dim], [m4404, m4405, m4408])
       utils.check_humanleague_result(p0, [m4404, m4405, m4408], seed.get_impossible_TROBH())
     else:
