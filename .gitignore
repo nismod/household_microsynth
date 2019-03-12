@@ -12,3 +12,5 @@ apikey.sh
 run.sh.o*
 run.sh.e*
 cache/
+# virtualenv
+.venv/
