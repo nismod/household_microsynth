@@ -28,7 +28,7 @@ def get_survey_TROBH(waveno=3):
     pivot = xtab.pivot_table(index=cols, values="frequency")
     # order must be same as column order above
     a = np.zeros(shape, dtype=float)
-    a[tuple(pivot.index.labels)] = pivot.values.flat
+    a[tuple(pivot.index.codes)] = pivot.values.flat
     seed = seed + a
 
   # add small probability of being in an unobserved state but ensure impossible states stay impossible

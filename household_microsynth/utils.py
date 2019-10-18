@@ -66,7 +66,7 @@ def unlistify(table, cols, sizes, vals):
     pivot = table.pivot_table(index=cols, values=vals)
     # order must be same as column order above
     a = np.zeros(sizes, dtype=int)
-    a[tuple(pivot.index.labels)] = pivot.values.flat
+    a[tuple(pivot.index.codes)] = pivot.values.flat
   return a
 
 # this is pasted from microsimulation
