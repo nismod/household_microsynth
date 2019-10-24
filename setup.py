@@ -2,9 +2,11 @@
 
 from setuptools import setup
 
+
 def readme():
-  with open('README.md') as f:
-    return f.read()
+    with open('README.md') as f:
+        return f.read()
+
 
 setup(name='household_microsynth',
       version='0.0.1',

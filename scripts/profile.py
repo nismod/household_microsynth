@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # run e.g.
-#python3 -m cProfile -o msynth.prof scripts/run_microsynth.py "City of London" OA
+# python3 -m cProfile -o msynth.prof scripts/run_microsynth.py "City of London" OA
 
 import pstats
 
