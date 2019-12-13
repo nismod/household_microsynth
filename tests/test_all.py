@@ -12,7 +12,7 @@ class Test(TestCase):
     def test_hh1(self):
         region = "E09000001"
         resolution = "MSOA11"
-        cache = "./cache"
+        cache = "../cache"  # modified from ./cache as previous was unsuitable for Leeds HPC (Arc3)
         microsynth = hh_msynth.Household(region, resolution, cache)
         num_dwellings = 5530
         num_occ_dwellings = 4385
@@ -30,7 +30,7 @@ class Test(TestCase):
     def test_sc1(self):
         region = "S12000023"  # Orkney is least populated council area
         resolution = "OA11"
-        cache = "./cache"
+        cache = "../cache"
         microsynth = hh_msynth.Household(region, resolution, cache)
         num_dwellings = 10357
         num_occ_dwellings = 9725
