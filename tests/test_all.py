@@ -4,6 +4,9 @@ from unittest import TestCase
 import household_microsynth.household as hh_msynth
 import household_microsynth.ref_person as hrp_msynth
 import household_microsynth.utils as Utils
+from household_microsynth.output_endpoint import Output
+import os
+import pandas as pd
 
 
 class Test(TestCase):
@@ -44,6 +47,33 @@ class Test(TestCase):
         self.assertTrue(
             Utils.check_hh(microsynth, num_occ_dwellings, num_dwellings, num_communal, pop_occupied_lb, pop_communal,
                            scotland=True))
+
+    # This can be used to test a custom output function that overrides the default logic.
+    def test_custom_endpoint(self):
+        Output.OUTPUT_DIR = "./tests/data/"
+        df = pd.read_csv("tests/persistent_data/hh_sample_output.csv")
+        df.name = "hh_sample_output.csv"
+        Output.send(pandas_df=df)
+
+    def test_hh_default_endpoint(self):
+        Output.OUTPUT_DIR = "tests/data/"
+        df = pd.read_csv("tests/persistent_data/hh_sample_output.csv")
+        df.name = "hh_sample_output.csv"
+        Output.send(pandas_df=df)
+        self.assertTrue(os.path.isfile("tests/data/hh_sample_output.csv"))
+
+    def test_hrp_default_endpoint(self):
+        Output.OUTPUT_DIR = "tests/data/"
+        df = pd.read_csv("tests/persistent_data/hrp_sample_output.csv")
+        df.name = "hrp_sample_output.csv"
+        Output.send(pandas_df=df)
+        self.assertTrue(os.path.isfile("tests/data/hrp_sample_output.csv"))
+
+    def tearDown(self):
+        if os.path.exists("tests/data/hh_sample_output.csv"):
+            os.remove("tests/data/hh_sample_output.csv")
+        if os.path.exists("tests/data/hrp_sample_output.csv"):
+            os.remove("tests/data/hrp_sample_output.csv")
 
     # def test_hrp1(self):
     #   region = "E09000001"
