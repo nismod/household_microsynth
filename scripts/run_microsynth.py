@@ -13,6 +13,7 @@ import humanleague
 import household_microsynth.household as hh_msynth
 import household_microsynth.ref_person as hrp_msynth
 import household_microsynth.utils as Utils
+from household_microsynth.output_endpoint import Output as Output
 
 assert int(humanleague.version().split(".")[0]) > 1
 CACHE_DIR = "./cache"
@@ -112,9 +113,10 @@ def do_hh(region, resolution):
     else:
         print("failed")
         raise RuntimeError("Consistency check failed")
-    output = OUTPUT_DIR + "/hh_" + region + "_" + resolution + "_2011.csv"
-    print("Writing synthetic population to", output)
-    msynth.dwellings.to_csv(output, index_label="HID")
+
+    msynth.dwellings.name = "hh_" + region + "_" + resolution + "_2011.csv"
+    Output.send(pandas_df=msynth.dwellings)
+
     print("DONE")
     return True
 
@@ -165,9 +167,10 @@ def do_hrp(region, resolution):
         print("ok")
     else:
         print("failed")
-    output = OUTPUT_DIR + "/hrp_" + region + "_" + resolution + "_2011.csv"
-    print("Writing synthetic population to", output)
-    msynth.hrps.to_csv(output)
+
+    msynth.hrps.name = "hrp_" + region + "_" + resolution + "_2011.csv"
+    Output.send(pandas_df=msynth.hrps)
+
     print("DONE")
 
 
