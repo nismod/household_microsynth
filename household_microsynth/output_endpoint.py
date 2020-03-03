@@ -14,7 +14,24 @@ class OutputHelper:
     @staticmethod
     def __custom_endpoint(dataframe):
         """WRITE IMPLEMENTATION HERE"""
-        raise NotImplementedError  # Remove this line if using the custom endpoint.
+        import pandas
+        import requests
+
+        # url/api details
+        # these should be loaded from a config file
+        url = ''
+        username = ''
+        password = ''
+
+        # data details
+        year=''
+        scale=''
+        data_version=''
+
+        response = requests.post('%s?year=%s&scale=%s&data_version=%s' %(url, year, scale, data_version),
+            auth=(username, password), data=dataframe.to_json())
+
+        #raise NotImplementedError  # Remove this line if using the custom endpoint.
 
     def __default_endpoint(self, dataframe):
         output_path = Path() / self.OUTPUT_DIR / dataframe.name
