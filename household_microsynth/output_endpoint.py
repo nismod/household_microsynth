@@ -16,21 +16,24 @@ class OutputHelper:
         """WRITE IMPLEMENTATION HERE"""
         import pandas
         import requests
+        import os, configparser
+        cfg = configparser.ConfigParser()
+        cfg.read(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'config.ini')))
 
         # url/api details
         # these should be loaded from a config file
-        url = ''
-        username = ''
-        password = ''
+        url = cfg['api']['url']
+        username = cfg['api']['username']
+        password = cfg['api']['password']
 
         # data details
-        year=''
-        scale=''
-        data_version=''
+        year = cfg['api_parameters']['year']
+        scale = cfg['api_parameters']['scale']
+        data_version = cfg['api_parameters']['data_version']
 
         response = requests.post('%s?year=%s&scale=%s&data_version=%s' %(url, year, scale, data_version),
             auth=(username, password), data=dataframe.to_json())
-
+        print(response.status_code)
         #raise NotImplementedError  # Remove this line if using the custom endpoint.
 
     def __default_endpoint(self, dataframe):
