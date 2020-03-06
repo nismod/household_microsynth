@@ -1,0 +1,9 @@
+[api]
+url=<api call to write data to>
+username=<api username>
+password=<api password>
+
+[api parameters]
+year=<year of the data to be written>
+scale=<the scale the data is produced at>
+data_version=<the data version>
