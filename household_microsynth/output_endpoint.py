@@ -14,10 +14,30 @@ class OutputHelper:
     @staticmethod
     def __custom_endpoint(dataframe):
         """WRITE IMPLEMENTATION HERE"""
-        raise NotImplementedError  # Remove this line if using the custom endpoint.
+        import pandas
+        import requests
+        import os, configparser
+
+        cfg = configparser.ConfigParser()
+        cfg.read(os.path.abspath(os.path.join(os.path.dirname(''), 'config.ini')))
+
+        # url/api details
+        # these should be loaded from a config file
+        url = cfg['api']['url']
+        username = cfg['api']['username']
+        password = cfg['api']['password']
+
+        # data details
+        year = cfg['api parameters']['year']
+        scale = cfg['api parameters']['scale']
+        data_version = cfg['api parameters']['data_version']
+
+        response = requests.post('%s?year=%s&scale=%s&data_version=%s' %(url, year, scale, data_version), auth=(username, password), data=dataframe.to_json())
+
 
     def __default_endpoint(self, dataframe):
         output_path = Path() / self.OUTPUT_DIR / dataframe.name
+        print("In default method")
         print("Writing synthetic population to", str(output_path))
         if dataframe.name[:2] == "hh":
             dataframe.to_csv(output_path, index_label="HID")
