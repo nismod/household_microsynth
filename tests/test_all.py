@@ -62,6 +62,18 @@ class Test(TestCase):
         Output.send(pandas_df=df)
         self.assertTrue(os.path.isfile("tests/data/hh_sample_output.csv"))
 
+    def test_hrp1(self):
+        region = "E09000001"
+        resolution = "MSOA11"
+        cache = "./cache"
+        microsynth = hrp_msynth.ReferencePerson(region, resolution, cache)
+        num_occ_dwellings = 4385
+
+        # any problems and assert will fail
+        microsynth.run()
+
+        self.assertTrue(Utils.check_hrp(microsynth, num_occ_dwellings))
+
     def test_hrp_default_endpoint(self):
         Output.OUTPUT_DIR = "tests/data/"
         df = pd.read_csv("tests/persistent_data/hrp_sample_output.csv")
@@ -74,17 +86,3 @@ class Test(TestCase):
             os.remove("tests/data/hh_sample_output.csv")
         if os.path.exists("tests/data/hrp_sample_output.csv"):
             os.remove("tests/data/hrp_sample_output.csv")
-
-    # def test_hrp1(self):
-    #   region = "E09000001"
-    #   resolution = "MSOA11"
-    #   cache = "./cache"
-    #   microsynth = hrp_msynth.ReferencePerson(region, resolution, cache)
-    #   num_occ_dwellings = 4385
-
-    #   # any problems and assert will fail
-    #   microsynth.run()
-
-    #   self.assertTrue(Utils.check_hrp(microsynth, num_occ_dwellings))
-
-    # TODO more tests
