@@ -6,6 +6,7 @@ The method must take a DataFrame which is the object type household_microsynth b
 The default behaviour is to write this object into the local ./data directory as a .csv file.
 """
 from pathlib import Path
+import os
 
 
 class OutputHelper:
@@ -18,6 +19,8 @@ class OutputHelper:
 
     def __default_endpoint(self, dataframe):
         output_path = Path() / self.OUTPUT_DIR / dataframe.name
+        if not os.path.isdir("./data"):
+            os.mkdir("./data")
         print("Writing synthetic population to", str(output_path))
         if dataframe.name[:2] == "hh":
             dataframe.to_csv(output_path, index_label="HID")
