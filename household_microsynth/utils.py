@@ -66,7 +66,7 @@ def remap(indices, mapping):
 
 def unlistify(table, cols, sizes, vals):
     if len(cols) == 1:
-        a = table.groupby(cols[0])[vals].sum().as_matrix()
+        a = table.groupby(cols[0])[vals].sum().to_numpy()
     else:
         pivot = table.pivot_table(index=cols, values=vals)
         # order must be same as column order above
