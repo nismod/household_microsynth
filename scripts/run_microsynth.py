@@ -4,6 +4,7 @@
 run script for Household microsynthesis
 """
 
+import os
 import sys
 import time
 import argparse
@@ -14,7 +15,7 @@ import household_microsynth.household as hh_msynth
 import household_microsynth.ref_person as hrp_msynth
 import household_microsynth.utils as Utils
 
-assert int(humanleague.version().split(".")[0]) > 1
+#assert int(humanleague.version().split(".")[0]) > 1
 CACHE_DIR = "./cache"
 OUTPUT_DIR = "./data"
 
@@ -33,6 +34,13 @@ OUTPUT_DIR = "./data"
 
 def main(params):
   """ Entry point """
+
+  if not os.path.exists(OUTPUT_DIR):
+    os.makedirs(OUTPUT_DIR)
+
+  if not os.path.exists(CACHE_DIR):
+    os.makedirs(CACHE_DIR)
+
   if not params.no_hh:
     do_hh(params.region, params.resolution)
   if params.do_hrp:
