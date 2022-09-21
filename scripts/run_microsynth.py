@@ -14,7 +14,7 @@ import household_microsynth.household as hh_msynth
 import household_microsynth.ref_person as hrp_msynth
 import household_microsynth.utils as Utils
 
-assert int(humanleague.version().split(".")[0]) > 1
+#assert int(humanleague.version().split(".")[0]) > 1
 CACHE_DIR = "./cache"
 OUTPUT_DIR = "./data"
 
