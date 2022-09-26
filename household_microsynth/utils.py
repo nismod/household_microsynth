@@ -114,7 +114,10 @@ def cap_value(table, colname, maxval, sumcolname):
         sumcolname].sum().reset_index()
     table_over[colname] = maxval
 
-    return table_under.append(table_over)
+    #table_under = pd.concat(table_under, table_over)
+
+    #return table_under.append(table_over)
+    return pd.concat([table_under, table_over])
 
 
 def people_per_bedroom(people, bedrooms):

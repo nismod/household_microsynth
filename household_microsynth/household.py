@@ -243,7 +243,8 @@ class Household:
         chunk.LC4202_C_CARSNO = utils.remap(table[8], cars_map)
         chunk.LC4605_C_NSSEC = utils.remap(table[9], econ_map)
         # print(chunk.head())
-        self.dwellings = self.dwellings.append(chunk, ignore_index=True)
+        #self.dwellings = self.dwellings.append(chunk, ignore_index=True)
+        self.dwellings = pd.concat([self.dwellings, chunk], ignore_index=True)
 
     def __add_communal(self, area):
 
@@ -286,7 +287,8 @@ class Household:
                 index += 1
 
         # print(chunk.head())
-        self.dwellings = self.dwellings.append(chunk, ignore_index=True)
+        #self.dwellings = self.dwellings.append(chunk, ignore_index=True)
+        self.dwellings = pd.concat([self.dwellings, chunk], ignore_index=True)
 
     # unoccupied, should be one entry per area
     # sample from the occupied houses
@@ -316,7 +318,8 @@ class Household:
         chunk.LC4405EW_C_BEDROOMS = s.LC4405EW_C_BEDROOMS
         chunk.LC4402_C_CENHEATHUK11 = s.LC4402_C_CENHEATHUK11
 
-        self.dwellings = self.dwellings.append(chunk, ignore_index=True)
+        #self.dwellings = self.dwellings.append(chunk, ignore_index=True)
+        self.dwellings = pd.concat([self.dwellings, chunk], ignore_index=True)
 
     def __get_census_data(self):
         if self.region[0] == "E" or self.region[0] == "W":
